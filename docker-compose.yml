@@ -1,0 +1,8 @@
+services:
+  otpilot:
+    build: .
+    container_name: otpilot
+    restart: unless-stopped
+    ports:
+      - "7890:7890"
+    # network_mode: "service:tailscale"  # uncomment if using Tailscale sidecar

@@ -1,0 +1,16 @@
+{
+  "name": "otpilot",
+  "version": "0.3.0",
+  "description": "Family OTP mesh relay — self-hosted, E2E encrypted, Tailscale-ready",
+  "type": "module",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js"
+  },
+  "keywords": ["otp", "sms", "family", "tailscale", "e2e-encryption", "self-hosted", "privacy"],
+  "license": "MIT",
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

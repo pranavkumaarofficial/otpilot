@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#181d26">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>otpilot</title>
+<link rel="manifest" href="/manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --primary:#181d26;
+  --primary-active:#0d1218;
+  --canvas:#ffffff;
+  --surface-soft:#f8fafc;
+  --surface-strong:#e0e2e6;
+  --hairline:#dddddd;
+  --ink:#181d26;
+  --body:#333840;
+  --muted:#41454d;
+  --border-strong:#9297a0;
+  --coral:#aa2d00;
+  --forest:#0a2e0e;
+  --cream:#f5e9d4;
+  --peach:#fcab79;
+  --mint:#a8d8c4;
+  --yellow:#f4d35e;
+  --success:#006400;
+  --success-border:#39bf45;
+  --link:#1b61c9;
+  --info:#254fad;
+  --info-border:#458fff;
+  --danger:#aa2d00;
+  --on-primary:#ffffff;
+  --font-sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,'Fira Sans','Droid Sans','Helvetica Neue',sans-serif;
+  --font-mono:'JetBrains Mono','SF Mono','Cascadia Code',monospace;
+  --radius-xs:2px;
+  --radius-sm:6px;
+  --radius-md:10px;
+  --radius-lg:12px;
+  --space-xxs:4px;
+  --space-xs:8px;
+  --space-sm:12px;
+  --space-md:16px;
+  --space-lg:24px;
+  --space-xl:32px;
+  --space-xxl:48px;
+}
+
+html,body{
+  font-family:var(--font-sans);
+  background:var(--canvas);
+  color:var(--ink);
+  font-size:14px;
+  font-weight:400;
+  line-height:1.25;
+  height:100%;
+  overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit;cursor:pointer;border:none;outline:none;-webkit-appearance:none;background:none}
+input,textarea{font-family:inherit;outline:none;border:none}
+
+.screen{display:none;flex-direction:column;height:100%;overflow:hidden;position:absolute;inset:0;background:var(--canvas)}
+.screen.active{display:flex}
+.screen.scrollable{overflow-y:auto}
+
+/* Top bar: 64px per DESIGN.md top-nav spec */
+.topbar{
+  background:var(--canvas);
+  color:var(--ink);
+  height:64px;padding:0 var(--space-lg);
+  display:flex;align-items:center;gap:var(--space-sm);
+  flex-shrink:0;z-index:10;
+  border-bottom:1px solid var(--hairline);
+}
+.topbar h1{font-size:20px;font-weight:400;flex:1}
+.topbar .subtitle{font-size:14px;color:var(--muted);font-weight:400}
+.topbar-btn{
+  width:40px;height:40px;
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--canvas);color:var(--ink);font-size:14px;font-weight:500;
+  border:1px solid var(--hairline);
+}
+.topbar-btn:active{background:var(--surface-soft)}
+
+/* Buttons: rounded-lg (12px), padding 16x24, weight 500, size 16 per DESIGN.md */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:var(--space-xs);
+  padding:var(--space-md) var(--space-lg);
+  border-radius:var(--radius-lg);
+  font-size:16px;font-weight:500;line-height:1.4;
+  transition:background .1s;
+}
+.btn:active{opacity:.9}
+.btn-primary{background:var(--primary);color:var(--on-primary)}
+.btn-primary:active{background:var(--primary-active)}
+.btn-secondary{background:var(--canvas);border:1px solid var(--hairline);color:var(--ink)}
+.btn-secondary:active{background:var(--surface-soft)}
+.btn-danger{background:var(--canvas);border:1px solid var(--danger);color:var(--danger)}
+.btn-danger:active{background:#fdf5f3}
+.btn-block{width:100%}
+.btn+.btn{margin-top:var(--space-sm)}
+.btn-sm{padding:var(--space-xs) var(--space-md);font-size:14px}
+
+/* Inputs: rounded-sm (6px), 44px, canvas bg, hairline border per DESIGN.md */
+.input-field{
+  width:100%;height:44px;padding:0 var(--space-md);
+  border-radius:var(--radius-sm);
+  background:var(--canvas);
+  font-size:14px;font-weight:400;color:var(--ink);
+  border:1px solid var(--hairline);
+  transition:border-color .15s;
+}
+.input-field:focus{border-color:var(--info-border);background:var(--canvas)}
+.input-field::placeholder{color:var(--border-strong)}
+.input-group{margin-bottom:var(--space-md);text-align:left}
+.input-group label{display:block;font-size:14px;font-weight:500;color:var(--body);margin-bottom:var(--space-xxs);letter-spacing:.16px}
+.textarea-field{height:auto;padding:var(--space-sm) var(--space-md);resize:vertical;min-height:80px;font-family:var(--font-mono);font-size:13px;line-height:1.6}
+
+/* Onboarding */
+#onboarding{justify-content:center;align-items:center;padding:var(--space-xxl)}
+.onboard-hero{max-width:340px;width:100%;text-align:center}
+.onboard-hero h1{font-size:40px;font-weight:400;color:var(--ink);margin-bottom:var(--space-xs);line-height:1.2}
+.onboard-hero p{color:var(--body);font-size:14px;font-weight:400;margin-bottom:var(--space-xl);line-height:1.25}
+
+/* Form screens */
+.form-screen{padding:var(--space-xl) var(--space-lg) var(--space-xxl);max-width:400px;margin:0 auto;width:100%}
+.form-title{font-size:24px;font-weight:400;color:var(--ink);margin-bottom:var(--space-xxs);line-height:1.35;letter-spacing:.12px}
+.form-subtitle{color:var(--body);font-size:14px;font-weight:400;margin-bottom:var(--space-lg);line-height:1.25}
+.back-row{display:flex;align-items:center;gap:var(--space-xs);padding:var(--space-md) 0;cursor:pointer}
+.back-row span{font-size:14px;font-weight:500;color:var(--ink)}
+.back-row:active{opacity:.7}
+
+/* Member tabs */
+.tabs-bar{
+  display:flex;gap:var(--space-xs);
+  padding:var(--space-sm) var(--space-md);
+  overflow-x:auto;flex-shrink:0;
+  background:var(--canvas);
+  border-bottom:1px solid var(--hairline);
+  -webkit-overflow-scrolling:touch;
+}
+.tabs-bar::-webkit-scrollbar{display:none}
+.tab-chip{
+  flex-shrink:0;padding:var(--space-xs) var(--space-sm);
+  border-radius:var(--radius-sm);
+  font-size:14px;font-weight:500;
+  display:flex;align-items:center;gap:6px;
+  background:var(--surface-soft);color:var(--muted);
+  border:1px solid transparent;
+}
+.tab-chip:active{opacity:.8}
+.tab-chip.active{background:var(--primary);color:var(--on-primary);border-color:var(--primary)}
+.tab-chip .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.tab-chip .dot.online{background:var(--success)}
+.tab-chip .dot.offline{background:var(--hairline)}
+.tab-chip.active .dot.online{background:var(--mint)}
+.tab-chip.active .dot.offline{background:rgba(255,255,255,.4)}
+.tab-chip .count{
+  min-width:18px;height:18px;padding:0 5px;border-radius:9px;
+  background:var(--coral);color:var(--on-primary);
+  font-size:11px;font-weight:500;
+  display:flex;align-items:center;justify-content:center;
+}
+.tab-chip.active .count{background:var(--on-primary);color:var(--primary)}
+
+/* Feed */
+.feed{flex:1;overflow-y:auto;padding:var(--space-sm) var(--space-md) 100px;background:var(--surface-soft);-webkit-overflow-scrolling:touch}
+.feed-empty{text-align:center;padding:60px var(--space-lg);color:var(--muted)}
+.feed-empty p{font-size:14px;font-weight:400;line-height:1.5}
+.feed-empty p strong{font-weight:500}
+
+/* OTP card */
+@keyframes slideUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.otp-card{
+  background:var(--canvas);
+  border:1px solid var(--hairline);
+  border-radius:var(--radius-md);
+  padding:var(--space-md);
+  margin-bottom:var(--space-xs);
+  cursor:pointer;
+  position:relative;overflow:hidden;
+  animation:slideUp .2s ease;
+}
+.otp-card:active{opacity:.95}
+.otp-card.copied{border-color:var(--success)}
+.otp-card[data-cat="delivery"]{border-left:3px solid var(--forest);background:#f2f7f3}
+.otp-card[data-cat="food"]{border-left:3px solid var(--peach);background:#fef5ec}
+.otp-card[data-cat="transport"]{border-left:3px solid var(--mint);background:#f0f9f5}
+.otp-card[data-cat="bank"]{border-left:3px solid var(--coral);background:#fdf5f3}
+.otp-card[data-cat="unknown"]{border-left:3px solid var(--hairline)}
+.otp-card .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-xs)}
+.otp-card .app-tag{
+  font-size:11px;font-weight:500;
+  text-transform:uppercase;letter-spacing:.3px;
+  color:var(--muted);
+}
+.otp-card .member-tag{font-size:11px;font-weight:500;color:var(--border-strong);text-transform:uppercase;letter-spacing:.3px}
+.otp-card .code{font-family:var(--font-mono);font-size:28px;font-weight:500;letter-spacing:3px;color:var(--ink);margin:var(--space-xxs) 0 var(--space-xs)}
+.otp-card .code.no-code{font-family:var(--font-sans);font-size:13px;letter-spacing:0;color:var(--muted);font-weight:400}
+.otp-card .body{font-size:13px;color:var(--body);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.otp-card .footer{display:flex;justify-content:space-between;align-items:center;margin-top:var(--space-sm)}
+.otp-card .from{font-size:11px;color:var(--border-strong);font-weight:500}
+.otp-card .time{font-size:11px;color:var(--border-strong)}
+.otp-card .ttl{height:2px;background:var(--hairline);border-radius:var(--radius-xs);margin-top:var(--space-sm);overflow:hidden}
+.otp-card .ttl-fill{height:100%;background:var(--primary);border-radius:var(--radius-xs);transition:width 1s linear}
+
+/* Connection pill (topbar) */
+.conn-pill{
+  width:10px;height:10px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+.conn-pip{width:10px;height:10px;border-radius:50%;background:var(--coral)}
+.conn-pill.connected .conn-pip{background:var(--success)}
+
+/* Snackbar */
+.snackbar{
+  position:fixed;bottom:var(--space-lg);left:50%;
+  transform:translateX(-50%) translateY(80px);
+  background:var(--primary);color:var(--on-primary);
+  padding:var(--space-sm) var(--space-lg);
+  border-radius:var(--radius-md);
+  font-size:14px;font-weight:500;z-index:200;
+  white-space:nowrap;
+  transition:transform .2s cubic-bezier(.4,0,.2,1);
+}
+.snackbar.show{transform:translateX(-50%) translateY(0)}
+
+/* QR */
+.qr-container{display:flex;flex-direction:column;align-items:center;gap:var(--space-sm);margin:var(--space-md) 0}
+.qr-container canvas,.qr-container img,.qr-container svg{border-radius:var(--radius-md);border:1px solid var(--hairline)}
+
+/* Panels */
+.panel{position:fixed;inset:0;background:var(--canvas);z-index:50;display:none;flex-direction:column;overflow:hidden}
+.panel.open{display:flex}
+.panel .panel-body{flex:1;overflow-y:auto;padding:var(--space-md) var(--space-lg) var(--space-xxl)}
+
+/* Settings */
+.settings-section{margin-bottom:var(--space-lg)}
+.settings-card{background:var(--canvas);border:1px solid var(--hairline);border-radius:var(--radius-md);padding:var(--space-md)}
+.settings-desc{font-size:14px;font-weight:400;color:var(--body);margin-bottom:var(--space-sm);line-height:1.25}
+.settings-hint{font-size:13px;color:var(--muted);margin-top:var(--space-xs)}
+
+/* Toggle */
+.toggle-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:var(--space-sm) 0;font-size:14px;font-weight:400;color:var(--ink);
+  border-bottom:1px solid var(--hairline);
+}
+.toggle-row:last-child{border-bottom:none}
+.toggle{position:relative;display:inline-block;width:44px;height:24px}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-track{
+  position:absolute;inset:0;background:var(--surface-strong);
+  border-radius:12px;transition:background .2s;cursor:pointer;
+}
+.toggle-track::before{
+  content:'';position:absolute;width:20px;height:20px;left:2px;top:2px;
+  background:var(--canvas);border-radius:50%;transition:transform .2s;
+}
+.toggle input:checked+.toggle-track{background:var(--primary)}
+.toggle input:checked+.toggle-track::before{transform:translateX(20px)}
+
+/* Radio options */
+.radio-group{display:flex;flex-wrap:wrap;gap:var(--space-xs)}
+.radio-option{
+  display:flex;align-items:center;gap:var(--space-xxs);
+  padding:var(--space-xs) var(--space-sm);
+  border:1px solid var(--hairline);border-radius:var(--radius-sm);
+  font-size:14px;font-weight:400;cursor:pointer;
+}
+.radio-option.selected{border-color:var(--primary);background:var(--surface-soft);font-weight:500}
+.radio-option input{display:none}
+
+/* Stats */
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-sm);margin-bottom:var(--space-lg)}
+.stat-card{background:var(--canvas);border:1px solid var(--hairline);border-radius:var(--radius-md);padding:var(--space-md);text-align:center}
+.stat-value{font-size:24px;font-weight:400;color:var(--ink)}
+.stat-label{font-size:14px;font-weight:500;color:var(--muted);margin-top:var(--space-xxs);letter-spacing:.16px}
+
+/* Member rows */
+.member-row{
+  display:flex;align-items:center;gap:var(--space-sm);
+  padding:var(--space-sm) var(--space-md);
+  background:var(--canvas);border:1px solid var(--hairline);
+  border-radius:var(--radius-sm);margin-bottom:var(--space-xs);
+}
+.member-row .avatar{
+  width:36px;height:36px;border-radius:50%;
+  background:var(--surface-soft);border:1px solid var(--hairline);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:500;font-size:14px;color:var(--ink);flex-shrink:0;
+}
+.member-row .info{flex:1}
+.member-row .name{font-weight:500;font-size:14px}
+.member-row .status{font-size:14px;color:var(--muted);font-weight:400}
+.member-row .status.online{color:var(--success)}
+.member-row .remove-btn{
+  color:var(--danger);font-size:14px;font-weight:500;
+  padding:var(--space-xxs) var(--space-xs);border-radius:var(--radius-sm);
+  background:none;border:1px solid var(--danger);cursor:pointer;
+}
+.member-row .remove-btn:active{background:#fdf5f3}
+
+/* Misc */
+.section-label{font-size:14px;font-weight:500;color:var(--muted);padding:var(--space-md) 0 var(--space-xs);letter-spacing:.16px}
+.divider{height:1px;background:var(--hairline);margin:var(--space-lg) 0}
+.code-block{
+  background:var(--primary);color:var(--mint);
+  padding:var(--space-sm) var(--space-md);border-radius:var(--radius-sm);
+  font-family:var(--font-mono);font-size:12px;line-height:1.6;
+  overflow-x:auto;margin:var(--space-xs) 0;cursor:pointer;
+}
+.code-block:active{opacity:.85}
+.invite-text{font-size:13px;color:var(--muted);word-break:break-all;text-align:center;margin-bottom:var(--space-md);cursor:pointer;line-height:1.4}
+</style>
+</head>
+<body>
+
+<div class="screen active" id="onboarding">
+  <div class="onboard-hero">
+    <h1>otpilot</h1>
+    <p>Share delivery OTPs with your family, securely and instantly.</p>
+    <button class="btn btn-primary btn-block" onclick="showCreate()">Create family</button>
+    <button class="btn btn-secondary btn-block" onclick="showJoin()">Join family</button>
+  </div>
+</div>
+
+<div class="screen scrollable" id="createScreen">
+  <div class="form-screen">
+    <div class="back-row" onclick="showOnboarding()">
+      <span>&larr; Back</span>
+    </div>
+    <h2 class="form-title">Create your family</h2>
+    <p class="form-subtitle">Everyone who scans the QR code can join.</p>
+    <div class="input-group">
+      <label>Enter family name</label>
+      <input class="input-field" id="familyNameInput" autocomplete="off">
+    </div>
+    <div class="input-group">
+      <label>Enter your name</label>
+      <input class="input-field" id="adminNameInput" autocomplete="off">
+    </div>
+    <button class="btn btn-primary btn-block" id="createBtn" onclick="createFamily()">Create family</button>
+    <div id="createResult"></div>
+  </div>
+</div>
+
+<div class="screen scrollable" id="joinScreen">
+  <div class="form-screen">
+    <div class="back-row" onclick="showOnboarding()">
+      <span>&larr; Back</span>
+    </div>
+    <h2 class="form-title">Join your family</h2>
+    <p class="form-subtitle">Scan the QR code shown on the creator's device, or paste the invite code below.</p>
+    <button class="btn btn-primary btn-block" onclick="startScan()">Scan QR code</button>
+    <div class="divider"></div>
+    <p style="font-size:14px;color:var(--muted);margin-bottom:var(--space-sm)">Or paste the invite code:</p>
+    <div class="input-group">
+      <label>Paste invite code</label>
+      <input class="input-field" id="inviteCodeInput" autocomplete="off">
+    </div>
+    <div class="input-group">
+      <label>Enter your name</label>
+      <input class="input-field" id="joinNameInput" autocomplete="off">
+    </div>
+    <button class="btn btn-secondary btn-block" onclick="joinManual()">Join</button>
+    <div id="joinResult"></div>
+  </div>
+  <video id="scanVideo" style="display:none;position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:60" playsinline></video>
+  <div id="scanOverlay" style="display:none;position:fixed;inset:0;z-index:61;background:rgba(0,0,0,.6);flex-direction:column;align-items:center;justify-content:center">
+    <div style="width:240px;height:240px;border:2px solid #fff;border-radius:var(--radius-lg)"></div>
+    <p style="color:#fff;margin-top:var(--space-md);font-size:14px">Point at the QR code</p>
+    <button class="btn btn-secondary" style="margin-top:var(--space-lg);color:#fff;border-color:rgba(255,255,255,.5)" onclick="stopScan()">Cancel</button>
+  </div>
+</div>
+
+<div class="screen" id="mainScreen">
+  <div class="topbar">
+    <div>
+      <h1>otpilot</h1>
+      <div class="subtitle" id="familyLabel"></div>
+    </div>
+    <button class="topbar-btn" id="adminBtn" onclick="openAdmin()" aria-label="Admin" style="display:none" title="Admin"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></button>
+    <span class="conn-pill" id="connPill"><span class="conn-pip"></span></span>
+    <button class="topbar-btn" onclick="openSettings()" aria-label="Settings"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+  </div>
+  <div class="tabs-bar" id="tabsBar"></div>
+  <div class="feed" id="feed">
+    <div class="feed-empty">
+      <p><strong>No OTPs yet</strong><br>They will appear here in real time when a family member receives one.</p>
+    </div>
+  </div>
+</div>
+
+<div class="panel" id="adminPanel">
+  <div class="topbar">
+    <div>
+      <h1>Admin</h1>
+      <div class="subtitle">Family management</div>
+    </div>
+    <button class="topbar-btn" onclick="closeAdmin()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>
+  <div class="panel-body">
+    <div class="section-label">Stats</div>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value" id="statMembers">0</div>
+        <div class="stat-label">Members</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statOnline">0</div>
+        <div class="stat-label">Online</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statOtps">0</div>
+        <div class="stat-label">Total OTPs</div>
+      </div>
+    </div>
+
+    <div class="section-label">Members</div>
+    <div id="adminMemberList"></div>
+
+    <div class="section-label" style="margin-top:var(--space-lg)">Invite</div>
+    <p class="settings-desc">Show this QR code or share the invite text with new members.</p>
+    <div class="qr-container" id="adminQr"></div>
+    <div class="invite-text" id="adminInviteText" onclick="copyEl(this)"></div>
+    <button class="btn btn-secondary btn-block btn-sm" onclick="regenerateInvite()">Regenerate invite code</button>
+  </div>
+</div>
+
+<div class="panel" id="settingsPanel">
+  <div class="topbar">
+    <div><h1>Settings</h1></div>
+    <button class="topbar-btn" onclick="closeSettings()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>
+  <div class="panel-body">
+
+    <div class="settings-section">
+      <div class="section-label">Profile</div>
+      <div class="settings-card">
+        <div class="input-group">
+          <label>Your name</label>
+          <input class="input-field" id="settingsName" placeholder="Your display name">
+        </div>
+        <div class="input-group" style="margin-bottom:var(--space-sm)">
+          <label>Family name</label>
+          <input class="input-field" id="settingsFamilyName" placeholder="Family name" disabled style="opacity:.6">
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="saveProfile()">Save changes</button>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="section-label">OTP expiry</div>
+      <div class="settings-card">
+        <p class="settings-desc">How long OTPs stay visible before expiring.</p>
+        <div class="radio-group" id="ttlOptions">
+          <label class="radio-option" onclick="selectTTL(this,60000)">
+            <input type="radio" name="ttl" value="60000"> <span>1 min</span>
+          </label>
+          <label class="radio-option" onclick="selectTTL(this,180000)">
+            <input type="radio" name="ttl" value="180000"> <span>3 min</span>
+          </label>
+          <label class="radio-option selected" onclick="selectTTL(this,300000)">
+            <input type="radio" name="ttl" value="300000" checked> <span>5 min</span>
+          </label>
+          <label class="radio-option" onclick="selectTTL(this,600000)">
+            <input type="radio" name="ttl" value="600000"> <span>10 min</span>
+          </label>
+        </div>
+        <p class="settings-hint" id="ttlAdminHint" style="display:none">Only the admin can change this for the family.</p>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="section-label">Filter rules</div>
+      <div class="settings-card">
+        <p class="settings-desc">Keywords to match for SMS forwarding. One per line.</p>
+        <textarea class="input-field textarea-field" id="filterKeywords" rows="4" placeholder="otp&#10;code&#10;pin&#10;verification"></textarea>
+        <div style="margin-top:var(--space-sm)">
+          <p class="settings-desc">Blocked sender IDs. Messages from these are ignored.</p>
+          <textarea class="input-field textarea-field" id="blockedSenders" rows="3" placeholder="AD-SPAM&#10;DM-PROMO"></textarea>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="saveFilters()" style="margin-top:var(--space-sm)">Save filters</button>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="section-label">Notifications</div>
+      <div class="settings-card">
+        <div class="toggle-row">
+          <span>Browser notifications</span>
+          <label class="toggle">
+            <input type="checkbox" id="toggleNotif" onchange="saveNotifPrefs()">
+            <span class="toggle-track"></span>
+          </label>
+        </div>
+        <div class="toggle-row">
+          <span>Sound alerts</span>
+          <label class="toggle">
+            <input type="checkbox" id="toggleSound" onchange="saveNotifPrefs()">
+            <span class="toggle-track"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="section-label">Sender setup</div>
+      <div class="settings-card">
+        <p class="settings-desc">Run this command in Termux to forward OTPs from this phone.</p>
+        <div class="code-block" id="senderCmd" onclick="copyEl(this)">Loading...</div>
+        <p class="settings-hint">Tap to copy. Requires Termux and Termux:API from F-Droid.</p>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="section-label">Family members</div>
+      <div id="memberList"></div>
+    </div>
+
+    <div class="settings-section">
+      <div class="section-label">Invite new member</div>
+      <div class="settings-card">
+        <p class="settings-desc">Show this QR code to family members who want to join.</p>
+        <div class="qr-container" id="settingsQr"></div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="divider"></div>
+      <button class="btn btn-danger btn-block" onclick="leaveFamily()">Leave family</button>
+    </div>
+  </div>
+</div>
+
+<div class="snackbar" id="snackbar"></div>
+
+<script>
+let state = { relay: null, familyId: null, familyName: null, memberId: null, memberToken: null, memberName: null, adminToken: null, joinToken: null, familyKey: null };
+let members = [];
+let otps = [];
+let ws = null;
+let selectedTab = "all";
+let reconnectTimeout = null;
+let serverTtl = 300000;
+
+const DB_NAME = "otpilot";
+const DB_STORE = "config";
+
+const DEFAULT_PREFS = {
+  ttl: 300000,
+  filterKeywords: "otp\ncode\npin\nverification\nverify\ndelivery\nparcel\norder",
+  blockedSenders: "",
+  notificationsEnabled: true,
+  soundEnabled: false
+};
+let prefs = { ...DEFAULT_PREFS };
+
+// IndexedDB
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore(DB_STORE);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function dbGet(key) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(DB_STORE, "readonly");
+    const r = tx.objectStore(DB_STORE).get(key);
+    r.onsuccess = () => resolve(r.result);
+    r.onerror = () => reject(r.error);
+  });
+}
+async function dbSet(key, val) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(DB_STORE, "readwrite");
+    tx.objectStore(DB_STORE).put(val, key);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+async function dbClear() { const db = await openDB(); db.transaction(DB_STORE, "readwrite").objectStore(DB_STORE).clear(); }
+
+async function loadPrefs() {
+  const saved = await dbGet("prefs").catch(() => null);
+  if (saved) prefs = { ...DEFAULT_PREFS, ...saved };
+}
+async function savePrefs() { await dbSet("prefs", prefs); }
+
+// Crypto (AES-256-GCM)
+async function generateKey() {
+  const key = await crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, true, ["encrypt", "decrypt"]);
+  const raw = await crypto.subtle.exportKey("raw", key);
+  return btoa(String.fromCharCode(...new Uint8Array(raw)));
+}
+
+async function importKey(b64) {
+  const raw = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+  return crypto.subtle.importKey("raw", raw, "AES-GCM", false, ["encrypt", "decrypt"]);
+}
+
+async function encrypt(data, keyB64) {
+  const key = await importKey(keyB64);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const encoded = new TextEncoder().encode(JSON.stringify(data));
+  const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, encoded);
+  return { iv: btoa(String.fromCharCode(...iv)), ct: btoa(String.fromCharCode(...new Uint8Array(ct))) };
+}
+
+async function decrypt(encrypted, keyB64) {
+  try {
+    const key = await importKey(keyB64);
+    const iv = Uint8Array.from(atob(encrypted.iv), c => c.charCodeAt(0));
+    const ct = Uint8Array.from(atob(encrypted.ct), c => c.charCodeAt(0));
+    const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ct);
+    return JSON.parse(new TextDecoder().decode(pt));
+  } catch { return null; }
+}
+
+// Screens
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+function showOnboarding() { showScreen("onboarding"); }
+function showCreate() { showScreen("createScreen"); }
+function showJoin() { showScreen("joinScreen"); }
+
+// Create family
+async function createFamily() {
+  const name = document.getElementById("familyNameInput").value.trim();
+  const myName = document.getElementById("adminNameInput").value.trim();
+  if (!name || !myName) return toast("Enter both names");
+
+  let qrRelay = location.origin;
+  try {
+    const relayRes = await fetch("/api/relay-url");
+    const relayData = await relayRes.json();
+    qrRelay = relayData.url;
+  } catch {}
+  const familyKey = await generateKey();
+
+  try {
+    const res = await fetch("/api/family", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name }) });
+    const data = await res.json();
+    if (!res.ok) return toast(data.error || "Failed");
+
+    const joinRes = await fetch(`/api/family/${data.familyId}/join`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ joinToken: data.joinToken, name: myName }) });
+    const joinData = await joinRes.json();
+
+    state = { relay: qrRelay, familyId: data.familyId, familyName: name, memberId: joinData.memberId, memberToken: joinData.memberToken, memberName: myName, adminToken: data.adminToken, joinToken: data.joinToken, familyKey };
+    await dbSet("state", state);
+
+    document.getElementById("familyNameInput").disabled = true;
+    document.getElementById("familyNameInput").style.opacity = ".5";
+    document.getElementById("adminNameInput").disabled = true;
+    document.getElementById("adminNameInput").style.opacity = ".5";
+    document.getElementById("createBtn").style.display = "none";
+
+    const invitePayload = JSON.stringify({ r: qrRelay, f: data.familyId, j: data.joinToken, k: familyKey, n: name });
+    const resultDiv = document.getElementById("createResult");
+    resultDiv.innerHTML = `
+      <div class="divider"></div>
+      <p style="font-size:14px;font-weight:500;color:var(--success);margin-bottom:var(--space-xs)">Family created</p>
+      <p class="settings-desc">Show this QR to family members:</p>
+      <div class="qr-container"><div id="createQrTarget"></div></div>
+      <p class="invite-text" onclick="copyEl(this)">Or copy this code:<br>${invitePayload}</p>
+      <button class="btn btn-primary btn-block" onclick="enterDashboard()">Open dashboard</button>
+    `;
+    renderQR("createQrTarget", invitePayload);
+  } catch (e) { toast("Network error. Is the server running?"); }
+}
+
+// Join family
+async function joinWithPayload(payload, myName) {
+  if (!myName) return toast("Enter your name");
+  let invite;
+  try { invite = JSON.parse(payload); } catch { return toast("Invalid invite code. Not valid JSON."); }
+  if (!invite.r || !invite.f || !invite.j || !invite.k) return toast("Invalid invite. Missing fields.");
+  try {
+    const relay = invite.r;
+    const apiBase = isSameServer(relay) ? "" : relay;
+    const res = await fetch(`${apiBase}/api/family/${invite.f}/join`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ joinToken: invite.j, name: myName }) });
+    const data = await res.json();
+    if (!res.ok) return toast(data.error || "Failed to join");
+
+    state = { relay, familyId: invite.f, familyName: invite.n, memberId: data.memberId, memberToken: data.memberToken, memberName: myName, adminToken: null, joinToken: invite.j, familyKey: invite.k };
+    await dbSet("state", state);
+    toast("Joined " + invite.n);
+    enterDashboard();
+  } catch (e) { toast("Network error: " + e.message); }
+}
+
+function isSameServer(relayUrl) {
+  try { return new URL(relayUrl).host === location.host; } catch { return false; }
+}
+
+function joinManual() {
+  const code = document.getElementById("inviteCodeInput").value.trim();
+  const name = document.getElementById("joinNameInput").value.trim();
+  joinWithPayload(code, name);
+}
+
+// QR scanning
+let scanStream = null;
+async function startScan() {
+  try {
+    scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+    const video = document.getElementById("scanVideo");
+    video.srcObject = scanStream;
+    video.style.display = "block";
+    video.play();
+    document.getElementById("scanOverlay").style.display = "flex";
+
+    if ("BarcodeDetector" in window) {
+      const detector = new BarcodeDetector({ formats: ["qr_code"] });
+      const scanLoop = async () => {
+        if (!scanStream) return;
+        try {
+          const codes = await detector.detect(video);
+          if (codes.length > 0) {
+            stopScan();
+            const name = prompt("Enter your name:");
+            if (name) joinWithPayload(codes[0].rawValue, name);
+            return;
+          }
+        } catch {}
+        requestAnimationFrame(scanLoop);
+      };
+      scanLoop();
+    } else {
+      toast("QR scanner not supported. Paste the code manually.");
+      stopScan();
+    }
+  } catch { toast("Camera access denied"); }
+}
+
+function stopScan() {
+  if (scanStream) { scanStream.getTracks().forEach(t => t.stop()); scanStream = null; }
+  document.getElementById("scanVideo").style.display = "none";
+  document.getElementById("scanOverlay").style.display = "none";
+}
+
+// Dashboard
+function enterDashboard() {
+  showScreen("mainScreen");
+  document.getElementById("familyLabel").textContent = state.familyName;
+  updateAdminVisibility();
+  connectWS();
+}
+
+function updateAdminVisibility() {
+  const btn = document.getElementById("adminBtn");
+  if (btn) btn.style.display = state.adminToken ? "flex" : "none";
+}
+
+// WebSocket
+function connectWS() {
+  if (ws && ws.readyState < 2) return;
+  const relayUrl = new URL(state.relay || location.origin);
+  const proto = relayUrl.protocol === "https:" ? "wss" : "ws";
+  const url = `${proto}://${relayUrl.host}/ws?familyId=${state.familyId}&memberId=${state.memberId}&token=${state.memberToken}`;
+  ws = new WebSocket(url);
+
+  ws.onopen = () => {
+    setConn(true);
+    if (reconnectTimeout) { clearTimeout(reconnectTimeout); reconnectTimeout = null; }
+  };
+
+  ws.onmessage = async (e) => {
+    const msg = JSON.parse(e.data);
+
+    if (msg.type === "history") {
+      otps = [];
+      for (const o of msg.data) {
+        const dec = await decrypt(o.encrypted, state.familyKey);
+        if (dec) otps.push({ ...o, ...dec });
+      }
+      renderFeed();
+    }
+
+    if (msg.type === "new_otp") {
+      const dec = await decrypt(msg.data.encrypted, state.familyKey);
+      if (dec) {
+        const otp = { ...msg.data, ...dec };
+        otps.unshift(otp);
+        renderFeed();
+        if (document.hidden && otp.otp && prefs.notificationsEnabled) notify(otp);
+        if (otp.otp) toast("New OTP from " + otp.memberName + ": " + otp.otp);
+      }
+    }
+
+    if (msg.type === "members") { members = msg.data; renderTabs(); }
+    if (msg.type === "presence") {
+      const m = members.find(x => x.id === msg.data.id);
+      if (m) m.online = msg.data.online;
+      else if (msg.data.online) members.push(msg.data);
+      renderTabs();
+    }
+    if (msg.type === "member_joined") {
+      members.push({ id: msg.data.id, name: msg.data.name, online: true });
+      renderTabs();
+      toast(msg.data.name + " joined the family");
+    }
+    if (msg.type === "member_left") {
+      members = members.filter(m => m.id !== msg.data.id);
+      renderTabs();
+    }
+    if (msg.type === "settings_updated") {
+      if (msg.data.otpTtl) {
+        serverTtl = msg.data.otpTtl;
+        prefs.ttl = msg.data.otpTtl;
+        await savePrefs();
+        renderFeed();
+      }
+    }
+  };
+
+  ws.onclose = () => { setConn(false); reconnectTimeout = setTimeout(connectWS, 3000); };
+  ws.onerror = () => ws.close();
+}
+
+function setConn(connected) {
+  const pill = document.getElementById("connPill");
+  if (pill) pill.className = "conn-pill" + (connected ? " connected" : "");
+}
+
+// Tabs
+function renderTabs() {
+  const bar = document.getElementById("tabsBar");
+  const allCount = otps.length;
+  let html = `<button class="tab-chip ${selectedTab === "all" ? "active" : ""}" onclick="selectTab('all')">All${allCount ? ` <span class='count'>${allCount}</span>` : ""}</button>`;
+  for (const m of members) {
+    const count = otps.filter(o => o.memberId === m.id).length;
+    const isMe = m.id === state.memberId;
+    html += `<button class="tab-chip ${selectedTab === m.id ? "active" : ""}" onclick="selectTab('${m.id}')">
+      <span class="dot ${m.online ? "online" : "offline"}"></span>${m.name}${isMe ? " (you)" : ""}${count ? ` <span class='count'>${count}</span>` : ""}
+    </button>`;
+  }
+  bar.innerHTML = html;
+}
+
+function selectTab(id) { selectedTab = id; renderTabs(); renderFeed(); }
+
+// Feed
+const CAT_MAP = {
+  amazon:"delivery",flipkart:"delivery",myntra:"delivery",meesho:"delivery",
+  swiggy:"food",zomato:"food",blinkit:"food",zepto:"food",bigbasket:"food",dunzo:"food",
+  uber:"transport",ola:"transport",rapido:"transport",
+  bank:"bank",hdfc:"bank",icici:"bank",sbi:"bank",axis:"bank",kotak:"bank",
+};
+
+function renderFeed() {
+  const feed = document.getElementById("feed");
+  const now = Date.now();
+  const ttlMs = prefs.ttl || 300000;
+  const filtered = selectedTab === "all" ? otps : otps.filter(o => o.memberId === selectedTab);
+  const active = filtered.filter(o => now - o.timestamp < ttlMs);
+
+  if (!active.length) {
+    feed.innerHTML = `<div class="feed-empty"><p><strong>No OTPs yet</strong><br>They will appear here in real time when a family member receives one.</p></div>`;
+    return;
+  }
+
+  feed.innerHTML = active.map(o => {
+    const ttl = Math.max(0, 100 - ((now - o.timestamp) / ttlMs) * 100);
+    const cat = CAT_MAP[o.app] || "unknown";
+    return `<div class="otp-card" data-cat="${cat}" onclick="copyOTP('${o.otp || ""}',this)" data-id="${o.id}">
+      <div class="header">
+        <span class="app-tag">${o.app || "sms"}</span>
+        <span class="member-tag">${o.memberName || "?"}</span>
+      </div>
+      ${o.otp ? `<div class="code">${o.otp}</div>` : `<div class="code no-code">No code extracted</div>`}
+      <div class="body">${esc(o.body || "")}</div>
+      <div class="footer"><span class="from">from ${esc(o.from || "")}</span><span class="time">${timeAgo(o.timestamp)}</span></div>
+      <div class="ttl"><div class="ttl-fill" style="width:${ttl}%"></div></div>
+    </div>`;
+  }).join("");
+}
+
+function copyOTP(code, el) {
+  if (!code) return;
+  navigator.clipboard.writeText(code);
+  el.classList.add("copied");
+  toast("Copied: " + code);
+  setTimeout(() => el.classList.remove("copied"), 1500);
+}
+
+// Admin panel
+function openAdmin() {
+  document.getElementById("adminPanel").classList.add("open");
+  renderAdmin();
+  fetchStats();
+}
+function closeAdmin() { document.getElementById("adminPanel").classList.remove("open"); }
+
+async function fetchStats() {
+  try {
+    const apiBase = isSameServer(state.relay) ? "" : state.relay;
+    const res = await fetch(`${apiBase}/api/family/${state.familyId}/stats`, {
+      headers: { "Authorization": `Bearer ${state.memberToken}` }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      document.getElementById("statMembers").textContent = data.totalMembers;
+      document.getElementById("statOnline").textContent = data.onlineMembers;
+      document.getElementById("statOtps").textContent = data.totalOtps;
+    }
+  } catch {}
+}
+
+function renderAdmin() {
+  const list = document.getElementById("adminMemberList");
+  list.innerHTML = members.map(m => `
+    <div class="member-row">
+      <div class="avatar">${m.name.charAt(0).toUpperCase()}</div>
+      <div class="info">
+        <div class="name">${esc(m.name)}${m.id === state.memberId ? " (you)" : ""}</div>
+        <div class="status ${m.online ? "online" : ""}">${m.online ? "Online" : "Offline"}</div>
+      </div>
+      ${m.id !== state.memberId ? `<button class="remove-btn" onclick="removeMember('${m.id}','${esc(m.name)}')">Remove</button>` : ""}
+    </div>
+  `).join("") || "<p style='color:var(--muted);font-size:14px'>No members yet.</p>";
+
+  const invitePayload = JSON.stringify({ r: state.relay, f: state.familyId, j: state.joinToken, k: state.familyKey, n: state.familyName });
+  const qrDiv = document.getElementById("adminQr");
+  qrDiv.innerHTML = "<div id='adminQrTarget'></div>";
+  renderQR("adminQrTarget", invitePayload);
+  document.getElementById("adminInviteText").textContent = invitePayload;
+}
+
+async function removeMember(memberId, name) {
+  if (!confirm("Remove " + name + " from the family?")) return;
+  try {
+    const apiBase = isSameServer(state.relay) ? "" : state.relay;
+    const res = await fetch(`${apiBase}/api/family/${state.familyId}/members/${memberId}`, {
+      method: "DELETE",
+      headers: { "Authorization": `Bearer ${state.adminToken}` }
+    });
+    if (res.ok) {
+      toast(name + " removed");
+      members = members.filter(m => m.id !== memberId);
+      renderAdmin();
+      renderTabs();
+      fetchStats();
+    } else {
+      const data = await res.json();
+      toast(data.error || "Failed to remove");
+    }
+  } catch { toast("Network error"); }
+}
+
+async function regenerateInvite() {
+  if (!confirm("Regenerate invite? The old QR code will stop working.")) return;
+  try {
+    const apiBase = isSameServer(state.relay) ? "" : state.relay;
+    const res = await fetch(`${apiBase}/api/family/${state.familyId}/regenerate-invite`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${state.adminToken}` }
+    });
+    const data = await res.json();
+    if (res.ok) {
+      state.joinToken = data.joinToken;
+      await dbSet("state", state);
+      renderAdmin();
+      toast("Invite code regenerated");
+    }
+  } catch { toast("Failed to regenerate"); }
+}
+
+// Settings panel
+function openSettings() {
+  document.getElementById("settingsPanel").classList.add("open");
+  renderSettings();
+}
+function closeSettings() { document.getElementById("settingsPanel").classList.remove("open"); }
+
+function renderSettings() {
+  document.getElementById("settingsName").value = state.memberName || "";
+  document.getElementById("settingsFamilyName").value = state.familyName || "";
+
+  document.querySelectorAll("#ttlOptions .radio-option").forEach(opt => {
+    const input = opt.querySelector("input");
+    const isSelected = parseInt(input.value) === prefs.ttl;
+    opt.classList.toggle("selected", isSelected);
+    input.checked = isSelected;
+  });
+
+  const isAdmin = !!state.adminToken;
+  document.getElementById("ttlAdminHint").style.display = isAdmin ? "none" : "block";
+  document.querySelectorAll("#ttlOptions .radio-option").forEach(opt => {
+    if (!isAdmin) { opt.style.opacity = ".5"; opt.style.pointerEvents = "none"; }
+    else { opt.style.opacity = "1"; opt.style.pointerEvents = "auto"; }
+  });
+
+  document.getElementById("filterKeywords").value = prefs.filterKeywords;
+  document.getElementById("blockedSenders").value = prefs.blockedSenders;
+
+  document.getElementById("toggleNotif").checked = prefs.notificationsEnabled;
+  document.getElementById("toggleSound").checked = prefs.soundEnabled;
+
+  const list = document.getElementById("memberList");
+  list.innerHTML = members.map(m => `<div class="member-row">
+    <div class="avatar">${m.name.charAt(0).toUpperCase()}</div>
+    <div class="info">
+      <div class="name">${esc(m.name)}${m.id === state.memberId ? " (you)" : ""}</div>
+      <div class="status ${m.online ? "online" : ""}">${m.online ? "Online" : "Offline"}</div>
+    </div>
+  </div>`).join("") || "<p style='color:var(--muted);font-size:14px'>No members yet.</p>";
+
+  const invitePayload = JSON.stringify({ r: state.relay, f: state.familyId, j: state.joinToken, k: state.familyKey, n: state.familyName });
+  const qrDiv = document.getElementById("settingsQr");
+  qrDiv.innerHTML = "<div id='settingsQrTarget'></div>";
+  renderQR("settingsQrTarget", invitePayload);
+
+  const filterStr = prefs.filterKeywords.split("\n").filter(Boolean).join("|");
+  const cmd = `RELAY=${state.relay} FAMILY=${state.familyId} TOKEN=${state.memberToken} KEY=${state.familyKey} NAME=${state.memberName} FILTER="${filterStr}" node sender/index.js`;
+  document.getElementById("senderCmd").textContent = cmd;
+}
+
+async function saveProfile() {
+  const newName = document.getElementById("settingsName").value.trim();
+  if (!newName) return toast("Name cannot be empty");
+  if (newName === state.memberName) return;
+  try {
+    const apiBase = isSameServer(state.relay) ? "" : state.relay;
+    const res = await fetch(`${apiBase}/api/family/${state.familyId}/name`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${state.memberToken}` },
+      body: JSON.stringify({ name: newName })
+    });
+    if (res.ok) {
+      state.memberName = newName;
+      await dbSet("state", state);
+      toast("Name updated");
+    } else {
+      const data = await res.json();
+      toast(data.error || "Failed to update name");
+    }
+  } catch { toast("Network error"); }
+}
+
+function selectTTL(el, value) {
+  if (!state.adminToken) return;
+  document.querySelectorAll("#ttlOptions .radio-option").forEach(opt => opt.classList.remove("selected"));
+  el.classList.add("selected");
+  el.querySelector("input").checked = true;
+  saveTTL(value);
+}
+
+async function saveTTL(value) {
+  prefs.ttl = value;
+  await savePrefs();
+
+  if (state.adminToken) {
+    try {
+      const apiBase = isSameServer(state.relay) ? "" : state.relay;
+      await fetch(`${apiBase}/api/family/${state.familyId}/settings`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${state.adminToken}` },
+        body: JSON.stringify({ otpTtl: value })
+      });
+      toast("Expiry updated for all members");
+    } catch { toast("Failed to update"); }
+  }
+  renderFeed();
+}
+
+async function saveFilters() {
+  prefs.filterKeywords = document.getElementById("filterKeywords").value;
+  prefs.blockedSenders = document.getElementById("blockedSenders").value;
+  await savePrefs();
+  renderSettings();
+  toast("Filters saved");
+}
+
+async function saveNotifPrefs() {
+  prefs.notificationsEnabled = document.getElementById("toggleNotif").checked;
+  prefs.soundEnabled = document.getElementById("toggleSound").checked;
+  await savePrefs();
+  if (prefs.notificationsEnabled && "Notification" in window && Notification.permission === "default") {
+    Notification.requestPermission();
+  }
+}
+
+async function leaveFamily() {
+  if (!confirm("Leave this family? You will need to re-scan the QR to rejoin.")) return;
+  await dbClear();
+  state = {};
+  otps = [];
+  members = [];
+  if (ws) ws.close();
+  showOnboarding();
+  toast("Left family");
+}
+
+// Helpers
+function toast(msg) {
+  const el = document.getElementById("snackbar");
+  el.textContent = msg;
+  el.classList.add("show");
+  setTimeout(() => el.classList.remove("show"), 2500);
+}
+
+function timeAgo(ts) {
+  const s = Math.floor((Date.now() - ts) / 1000);
+  if (s < 5) return "just now";
+  if (s < 60) return s + "s ago";
+  if (s < 3600) return Math.floor(s / 60) + "m ago";
+  return new Date(ts).toLocaleTimeString();
+}
+
+function esc(s) { return (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/'/g, "&#39;").replace(/"/g, "&quot;"); }
+
+function copyEl(el) { navigator.clipboard.writeText(el.textContent); toast("Copied"); }
+
+function renderQR(targetId, data) {
+  const qr = qrcode(0, "M");
+  qr.addData(data);
+  qr.make();
+  const el = document.getElementById(targetId);
+  if (el) el.innerHTML = qr.createSvgTag(4, 8);
+}
+
+function notify(otp) {
+  if ("Notification" in window && Notification.permission === "granted") {
+    new Notification("OTP from " + otp.memberName, { body: otp.app + ": " + otp.otp, tag: otp.id });
+  }
+}
+
+setInterval(() => { if (otps.length) renderFeed(); }, 15000);
+
+if ("Notification" in window && Notification.permission === "default") Notification.requestPermission();
+
+(async () => {
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js");
+  await loadPrefs();
+  const saved = await dbGet("state").catch(() => null);
+  if (saved && saved.familyId && saved.memberToken) {
+    state = saved;
+    enterDashboard();
+  } else {
+    showOnboarding();
+  }
+})();
+</script>
+</body>
+</html>

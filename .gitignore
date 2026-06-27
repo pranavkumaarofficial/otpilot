@@ -1,0 +1,11 @@
+node_modules/
+.env
+*.log
+.DS_Store
+.otpilot_seen
+.claude/
+.idea/
+nul
+app_context.md
+google_agent.md
+DESIGN.md

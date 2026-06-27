@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="dev.otpilot">
+
+    <!-- SMS permission: same as Truecaller, Google Messages, bank apps -->
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    <uses-permission android:name="android.permission.READ_SMS" />
+
+    <!-- Network for uploading OTPs to relay -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- Camera for QR scanning during onboarding -->
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- Foreground service for WorkManager expedited work -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+
+    <application
+        android:name=".OtpilotApp"
+        android:label="otpilot"
+        android:icon="@mipmap/ic_launcher"
+        android:theme="@style/Theme.Otpilot"
+        android:allowBackup="false">
+
+        <!-- Main activity: QR scan + config. Only opened once during setup. -->
+        <activity
+            android:name=".ui.MainActivity"
+            android:exported="true"
+            android:label="otpilot"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!--
+            SMS BroadcastReceiver: the core of the app.
+            
+            This is NOT a background service. It does NOT run continuously.
+            Android OS wakes it ONLY when an SMS arrives, exactly like
+            how Truecaller and Google Messages work.
+            
+            priority="999" ensures we receive the broadcast early
+            (before other apps that might consume it).
+        -->
+        <receiver
+            android:name=".receiver.OtpReceiver"
+            android:exported="true"
+            android:permission="android.permission.BROADCAST_SMS">
+            <intent-filter android:priority="999">
+                <action android:name="android.provider.Telephony.SMS_RECEIVED" />
+            </intent-filter>
+        </receiver>
+
+    </application>
+</manifest>
