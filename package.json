@@ -1,6 +1,6 @@
 {
   "name": "otpilot",
-  "version": "0.3.0",
+  "version": "1.0.0",
   "description": "Family OTP mesh relay — self-hosted, E2E encrypted, Tailscale-ready",
   "type": "module",
   "main": "server/index.js",
