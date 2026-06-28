@@ -48,6 +48,7 @@ class DashboardActivity : AppCompatActivity() {
     private val members = mutableListOf<FamilyMember>()
     private var selectedTab = "all"
     private var otpTtl = 300_000L
+    private var adminId: String? = null
     private var service: RelayWebSocketService? = null
     private var bound = false
 
@@ -85,6 +86,8 @@ class DashboardActivity : AppCompatActivity() {
                 }
                 RelayWebSocketService.ACTION_MEMBERS -> {
                     val json = intent.getStringExtra("json") ?: return
+                    val newAdminId = intent.getStringExtra("adminId")
+                    if (!newAdminId.isNullOrEmpty()) adminId = newAdminId
                     handleMembers(json)
                 }
                 RelayWebSocketService.ACTION_PRESENCE -> {
@@ -96,9 +99,28 @@ class DashboardActivity : AppCompatActivity() {
                     otpTtl = ttl
                     otpAdapter.setTtl(ttl)
                 }
-                RelayWebSocketService.ACTION_MEMBER_JOINED,
+                RelayWebSocketService.ACTION_MEMBER_JOINED -> {
+                    val json = intent.getStringExtra("json") ?: return
+                    try {
+                        val data = JSONObject(json)
+                        val name = data.optString("name", "Someone")
+                        runOnUiThread {
+                            Toast.makeText(this@DashboardActivity, "$name joined the family", Toast.LENGTH_SHORT).show()
+                        }
+                    } catch (_: Exception) {}
+                }
                 RelayWebSocketService.ACTION_MEMBER_LEFT -> {
-                    // Members list will be refreshed via the members broadcast
+                    val json = intent.getStringExtra("json") ?: return
+                    try {
+                        val data = JSONObject(json)
+                        val name = data.optString("name", "Someone")
+                        runOnUiThread {
+                            Toast.makeText(this@DashboardActivity, "$name left the family", Toast.LENGTH_SHORT).show()
+                        }
+                    } catch (_: Exception) {}
+                }
+                RelayWebSocketService.ACTION_KICKED -> {
+                    runOnUiThread { handleKicked() }
                 }
             }
         }
@@ -171,6 +193,7 @@ class DashboardActivity : AppCompatActivity() {
             addAction(RelayWebSocketService.ACTION_SETTINGS)
             addAction(RelayWebSocketService.ACTION_MEMBER_JOINED)
             addAction(RelayWebSocketService.ACTION_MEMBER_LEFT)
+            addAction(RelayWebSocketService.ACTION_KICKED)
         }
         lbm.registerReceiver(wsReceiver, filter)
     }
@@ -311,6 +334,9 @@ class DashboardActivity : AppCompatActivity() {
         val now = System.currentTimeMillis()
         val activeOtps = allOtps.filter { now - it.timestamp < otpTtl }
         val counts = activeOtps.groupBy { it.memberId }.mapValues { it.value.size }
+        val prefs = getSharedPreferences(OtpilotApp.PREFS_NAME, Context.MODE_PRIVATE)
+        tabAdapter.setAdminId(adminId)
+        tabAdapter.setMyMemberId(prefs.getString("memberId", null))
         tabAdapter.setData(members, counts, activeOtps.size)
         tabAdapter.setSelected(selectedTab)
     }
@@ -380,6 +406,17 @@ class DashboardActivity : AppCompatActivity() {
         )
 
         Toast.makeText(this, "${getString(R.string.test_otp_sent)}: $testCode", Toast.LENGTH_LONG).show()
+    }
+
+    private fun handleKicked() {
+        val prefs = getSharedPreferences(OtpilotApp.PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().clear().apply()
+        Toast.makeText(this, "You were removed from the family", Toast.LENGTH_LONG).show()
+        val intent = Intent(this, OnboardingActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        startActivity(intent)
+        finish()
     }
 
     private fun copyToClipboard(code: String) {

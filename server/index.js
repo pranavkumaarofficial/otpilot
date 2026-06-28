@@ -42,7 +42,7 @@ function createFamily(name) {
   const adminToken = crypto.randomBytes(24).toString("base64url");
   const joinToken = crypto.randomBytes(16).toString("base64url");
   families.set(id, {
-    name, adminToken, joinToken,
+    name, adminToken, joinToken, adminId: null,
     members: new Map(), otps: [], wsClients: new Map(),
     otpTtl: DEFAULT_OTP_TTL,
     stats: { totalOtps: 0 }
@@ -139,6 +139,7 @@ async function handleJoin(req, res, url) {
     if (joinToken !== fam.joinToken) return json(res, 403, { error: "invalid join token" });
     if (!name) return json(res, 400, { error: "name required" });
     const member = addMember(fam, name);
+    if (!fam.adminId) fam.adminId = member.id;
     broadcastEvent(fam, { type: "member_joined", data: { id: member.id, name } });
     json(res, 201, { memberId: member.id, memberToken: member.token, familyName: fam.name });
   } catch { json(res, 400, { error: "invalid body" }); }
@@ -174,7 +175,7 @@ function handleGetMembers(req, res, url) {
   if (!fam) return json(res, 404, { error: "family not found" });
   if (!authMember(req, fam)) return json(res, 401, { error: "unauthorized" });
   const members = [...fam.members.values()].map(m => ({ id: m.id, name: m.name, online: m.online, joinedAt: m.joinedAt }));
-  json(res, 200, { members, familyName: fam.name });
+  json(res, 200, { members, familyName: fam.name, adminId: fam.adminId });
 }
 
 async function handleRemoveMember(req, res, url) {
@@ -183,10 +184,12 @@ async function handleRemoveMember(req, res, url) {
   const t = (req.headers.authorization || "").replace("Bearer ", "");
   if (t !== fam.adminToken) return json(res, 403, { error: "admin only" });
   const mid = getMemberId(url);
+  const removed = fam.members.get(mid);
+  const removedName = removed ? removed.name : "Unknown";
   fam.members.delete(mid);
-  const ws = fam.wsClients.get(mid);
-  if (ws) { ws.close(); fam.wsClients.delete(mid); }
-  broadcastEvent(fam, { type: "member_left", data: { id: mid } });
+  const memberWs = fam.wsClients.get(mid);
+  if (memberWs) { memberWs.close(4010, "removed"); fam.wsClients.delete(mid); }
+  broadcastEvent(fam, { type: "member_left", data: { id: mid, name: removedName } });
   json(res, 200, { ok: true });
 }
 
@@ -237,7 +240,7 @@ async function handleUpdateName(req, res, url) {
     const { name } = await readBody(req);
     if (!name || !name.trim()) return json(res, 400, { error: "name required" });
     member.name = name.trim();
-    broadcastEvent(fam, { type: "members", data: [...fam.members.values()].map(m => ({ id: m.id, name: m.name, online: m.online })) });
+    broadcastEvent(fam, { type: "members", data: [...fam.members.values()].map(m => ({ id: m.id, name: m.name, online: m.online })), adminId: fam.adminId });
     json(res, 200, { ok: true, name: member.name });
   } catch { json(res, 400, { error: "invalid body" }); }
 }
@@ -265,9 +268,9 @@ wss.on("connection", (ws, req) => {
   const recent = fam.otps.filter(o => now - o.timestamp < fam.otpTtl);
   ws.send(JSON.stringify({ type: "history", data: recent }));
 
-  // Send member list
+  // Send member list with admin info
   const members = [...fam.members.values()].map(m => ({ id: m.id, name: m.name, online: m.online }));
-  ws.send(JSON.stringify({ type: "members", data: members }));
+  ws.send(JSON.stringify({ type: "members", data: members, adminId: fam.adminId }));
 
   // Send current settings
   ws.send(JSON.stringify({ type: "settings_updated", data: { otpTtl: fam.otpTtl } }));

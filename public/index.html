@@ -551,6 +551,7 @@ let ws = null;
 let selectedTab = "all";
 let reconnectTimeout = null;
 let serverTtl = 300000;
+let adminId = null;
 
 const DB_NAME = "otpilot";
 const DB_STORE = "config";
@@ -802,7 +803,7 @@ function connectWS() {
       }
     }
 
-    if (msg.type === "members") { members = msg.data; renderTabs(); }
+    if (msg.type === "members") { members = msg.data; if (msg.adminId) adminId = msg.adminId; renderTabs(); }
     if (msg.type === "presence") {
       const m = members.find(x => x.id === msg.data.id);
       if (m) m.online = msg.data.online;
@@ -815,8 +816,10 @@ function connectWS() {
       toast(msg.data.name + " joined the family");
     }
     if (msg.type === "member_left") {
+      const leftName = msg.data.name || members.find(m => m.id === msg.data.id)?.name || "Someone";
       members = members.filter(m => m.id !== msg.data.id);
       renderTabs();
+      toast(leftName + " left the family");
     }
     if (msg.type === "settings_updated") {
       if (msg.data.otpTtl) {
@@ -845,8 +848,10 @@ function renderTabs() {
   for (const m of members) {
     const count = otps.filter(o => o.memberId === m.id).length;
     const isMe = m.id === state.memberId;
+    const isAdmin = m.id === adminId;
+    const label = m.name + (isMe ? " (you)" : "") + (isAdmin && !state.adminToken ? " \u00b7 admin" : "");
     html += `<button class="tab-chip ${selectedTab === m.id ? "active" : ""}" onclick="selectTab('${m.id}')">
-      <span class="dot ${m.online ? "online" : "offline"}"></span>${m.name}${isMe ? " (you)" : ""}${count ? ` <span class='count'>${count}</span>` : ""}
+      <span class="dot ${m.online ? "online" : "offline"}"></span>${label}${count ? ` <span class='count'>${count}</span>` : ""}
     </button>`;
   }
   bar.innerHTML = html;

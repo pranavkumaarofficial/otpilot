@@ -14,7 +14,8 @@ data class TabItem(
     val name: String,
     val online: Boolean,
     val count: Int,
-    val isAll: Boolean = false
+    val isAll: Boolean = false,
+    val isAdmin: Boolean = false
 )
 
 class MemberTabAdapter(
@@ -24,13 +25,26 @@ class MemberTabAdapter(
     private val items = mutableListOf<TabItem>()
     private var selectedId = "all"
 
+    private var adminId: String? = null
+    private var myMemberId: String? = null
+
     fun setData(members: List<FamilyMember>, otpCounts: Map<String, Int>, totalCount: Int) {
         items.clear()
-        items.add(TabItem("all", "All", false, totalCount, true))
+        items.add(TabItem("all", "All", false, totalCount, isAll = true))
         for (m in members) {
-            items.add(TabItem(m.id, m.name, m.online, otpCounts[m.id] ?: 0))
+            val isAdmin = m.id == adminId && m.id != myMemberId
+            val label = if (isAdmin) "${m.name} · admin" else m.name
+            items.add(TabItem(m.id, label, m.online, otpCounts[m.id] ?: 0, isAdmin = isAdmin))
         }
         notifyDataSetChanged()
+    }
+
+    fun setAdminId(id: String?) {
+        adminId = id
+    }
+
+    fun setMyMemberId(id: String?) {
+        myMemberId = id
     }
 
     fun setSelected(id: String) {

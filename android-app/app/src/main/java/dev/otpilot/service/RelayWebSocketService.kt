@@ -41,6 +41,7 @@ class RelayWebSocketService : Service() {
         const val ACTION_SETTINGS = "dev.otpilot.SETTINGS"
         const val ACTION_MEMBER_JOINED = "dev.otpilot.MEMBER_JOINED"
         const val ACTION_MEMBER_LEFT = "dev.otpilot.MEMBER_LEFT"
+        const val ACTION_KICKED = "dev.otpilot.KICKED"
     }
 
     private val binder = LocalBinder()
@@ -124,7 +125,12 @@ class RelayWebSocketService : Service() {
             override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
                 isConnected = false
                 broadcast(ACTION_CONNECTION, "connected" to "false")
-                scheduleReconnect()
+                if (code == 4010) {
+                    Log.d(TAG, "Kicked from family (code 4010)")
+                    broadcast(ACTION_KICKED)
+                } else {
+                    scheduleReconnect()
+                }
             }
 
             override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
@@ -167,7 +173,10 @@ class RelayWebSocketService : Service() {
                     }
                 }
                 "members" -> {
-                    broadcast(ACTION_MEMBERS, "json" to json.getJSONArray("data").toString())
+                    broadcast(ACTION_MEMBERS,
+                        "json" to json.getJSONArray("data").toString(),
+                        "adminId" to json.optString("adminId", "")
+                    )
                 }
                 "presence" -> {
                     broadcast(ACTION_PRESENCE, "json" to json.getJSONObject("data").toString())
