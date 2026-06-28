@@ -4,8 +4,8 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.provider.Telephony
-import android.telephony.SmsMessage
-import dev.otpilot.crypto.CryptoUtil
+import android.util.Log
+import dev.otpilot.OtpilotApp
 import dev.otpilot.worker.OtpUploadWorker
 
 /**
@@ -19,17 +19,12 @@ import dev.otpilot.worker.OtpUploadWorker
 class OtpReceiver : BroadcastReceiver() {
 
     companion object {
-        // Keywords that indicate an OTP message (case-insensitive)
-        private val OTP_KEYWORDS = listOf(
+        private const val TAG = "OtpReceiver"
+        private val DEFAULT_KEYWORDS = listOf(
             "otp", "code", "pin", "verification", "verify",
             "delivery", "parcel", "order"
         )
 
-        // Keywords to EXCLUDE (banking OTPs — configurable)
-        private val EXCLUDE_KEYWORDS = listOf<String>()
-
-        // Sender ID prefixes for known services
-        // VK-SBI, AD-AMAZON, VM-FKRT, BZ-SWIGGY, etc.
         private val APP_PATTERNS = mapOf(
             "amazon" to Regex("amazon|amzn", RegexOption.IGNORE_CASE),
             "flipkart" to Regex("flipkart|fkrt", RegexOption.IGNORE_CASE),
@@ -57,41 +52,62 @@ class OtpReceiver : BroadcastReceiver() {
         private val OTP_REGEX = listOf(
             Regex("\\b(\\d{4,8})\\b.*(?:otp|code|pin|verification|verify)", RegexOption.IGNORE_CASE),
             Regex("(?:otp|code|pin|verification|verify).*\\b(\\d{4,8})\\b", RegexOption.IGNORE_CASE),
-            Regex("\\b(\\d{6})\\b"),  // fallback: any 6-digit number
+            Regex("\\b(\\d{6})\\b"),
         )
     }
 
     override fun onReceive(context: Context, intent: Intent) {
-        // Guard: only handle SMS_RECEIVED
+        Log.d(TAG, "onReceive called, action=${intent.action}")
         if (intent.action != Telephony.Sms.Intents.SMS_RECEIVED_ACTION) return
 
-        // Extract SMS messages from the intent
-        val messages = Telephony.Sms.Intents.getMessagesFromIntent(intent)
-        if (messages.isNullOrEmpty()) return
+        // Check if app is configured
+        val prefs = context.getSharedPreferences(OtpilotApp.PREFS_NAME, Context.MODE_PRIVATE)
+        if (!prefs.contains("relay") || !prefs.contains("memberToken")) {
+            Log.d(TAG, "App not configured, skipping")
+            return
+        }
 
-        // Combine multi-part SMS
+        val messages = Telephony.Sms.Intents.getMessagesFromIntent(intent)
+        if (messages.isNullOrEmpty()) {
+            Log.d(TAG, "No messages in intent")
+            return
+        }
+
         val from = messages[0].originatingAddress ?: "unknown"
         val body = messages.joinToString("") { it.messageBody ?: "" }
-
-        // ── FAST FILTER (microseconds, zero battery cost) ──
         val bodyLower = body.lowercase()
+        Log.d(TAG, "SMS from=$from body=$body")
 
-        // Check exclusions first
-        if (EXCLUDE_KEYWORDS.any { bodyLower.contains(it) }) return
+        // Load filter keywords from prefs (user-configurable)
+        val keywordsStr = prefs.getString("filterKeywords", null)
+        val keywords = if (keywordsStr != null) {
+            keywordsStr.split("\n").map { it.trim().lowercase() }.filter { it.isNotEmpty() }
+        } else {
+            DEFAULT_KEYWORDS
+        }
+        Log.d(TAG, "Keywords: $keywords")
 
-        // Check if this is an OTP message
-        val isOtp = OTP_KEYWORDS.any { bodyLower.contains(it) }
-        if (!isOtp) return
-        // ── END FILTER ──
+        // Load blocked senders
+        val blockedStr = prefs.getString("blockedSenders", "")
+        val blocked = blockedStr?.split("\n")?.map { it.trim().lowercase() }?.filter { it.isNotEmpty() } ?: emptyList()
 
-        // Extract OTP code
+        // Check blocked senders
+        if (blocked.any { from.lowercase().contains(it) }) {
+            Log.d(TAG, "Sender blocked")
+            return
+        }
+
+        // Check keywords
+        val isOtp = keywords.any { bodyLower.contains(it) }
+        if (!isOtp) {
+            Log.d(TAG, "No keyword match, skipping")
+            return
+        }
+
         val otpCode = extractOtp(body)
-
-        // Detect source app
         val app = detectApp(from, body)
+        Log.d(TAG, "OTP detected: code=$otpCode app=$app, enqueueing upload")
 
-        // Enqueue encrypted upload via WorkManager
-        // WorkManager handles: no network, retry, battery optimization
         OtpUploadWorker.enqueue(
             context = context,
             from = from,
@@ -99,9 +115,6 @@ class OtpReceiver : BroadcastReceiver() {
             otp = otpCode,
             app = app
         )
-
-        // BroadcastReceiver returns here. App goes back to dead state.
-        // Total execution time: ~5-50ms
     }
 
     private fun extractOtp(text: String): String? {

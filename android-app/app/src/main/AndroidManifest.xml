@@ -1,31 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="dev.otpilot">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- SMS permission: same as Truecaller, Google Messages, bank apps -->
+    <!-- SMS permissions -->
     <uses-permission android:name="android.permission.RECEIVE_SMS" />
     <uses-permission android:name="android.permission.READ_SMS" />
 
-    <!-- Network for uploading OTPs to relay -->
+    <!-- Network -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
-    <!-- Camera for QR scanning during onboarding -->
+    <!-- Camera for QR scanning -->
     <uses-permission android:name="android.permission.CAMERA" />
 
-    <!-- Foreground service for WorkManager expedited work -->
+    <!-- Foreground service for WebSocket connection -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+
+    <!-- Notifications (Android 13+) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- Battery optimization exemption (Samsung kills background services without this) -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
+    <!-- Wake lock to keep WebSocket alive -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
         android:name=".OtpilotApp"
         android:label="otpilot"
         android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
         android:theme="@style/Theme.Otpilot"
-        android:allowBackup="false">
+        android:allowBackup="false"
+        android:usesCleartextTraffic="true">
 
-        <!-- Main activity: QR scan + config. Only opened once during setup. -->
+        <!-- Onboarding: QR scan + paste code -->
         <activity
-            android:name=".ui.MainActivity"
+            android:name=".ui.OnboardingActivity"
             android:exported="true"
             android:label="otpilot"
             android:screenOrientation="portrait">
@@ -35,16 +46,20 @@
             </intent-filter>
         </activity>
 
-        <!--
-            SMS BroadcastReceiver: the core of the app.
-            
-            This is NOT a background service. It does NOT run continuously.
-            Android OS wakes it ONLY when an SMS arrives, exactly like
-            how Truecaller and Google Messages work.
-            
-            priority="999" ensures we receive the broadcast early
-            (before other apps that might consume it).
-        -->
+        <!-- Dashboard: OTP feed -->
+        <activity
+            android:name=".ui.DashboardActivity"
+            android:label="otpilot"
+            android:screenOrientation="portrait"
+            android:launchMode="singleTop" />
+
+        <!-- Settings -->
+        <activity
+            android:name=".ui.SettingsActivity"
+            android:label="Settings"
+            android:screenOrientation="portrait" />
+
+        <!-- SMS BroadcastReceiver -->
         <receiver
             android:name=".receiver.OtpReceiver"
             android:exported="true"
@@ -53,6 +68,22 @@
                 <action android:name="android.provider.Telephony.SMS_RECEIVED" />
             </intent-filter>
         </receiver>
+
+        <!-- WebSocket foreground service -->
+        <service
+            android:name=".service.RelayWebSocketService"
+            android:foregroundServiceType="dataSync"
+            android:exported="false" />
+
+        <!-- Notification listener: reads SMS notifications from Google/Samsung Messages -->
+        <service
+            android:name=".service.SmsNotificationListener"
+            android:exported="true"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
 
     </application>
 </manifest>

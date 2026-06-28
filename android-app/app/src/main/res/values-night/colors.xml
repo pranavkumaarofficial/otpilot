@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Same colors as light mode for now -->
+    <color name="status_bar">#FF181d26</color>
+</resources>

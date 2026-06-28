@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Spacing -->
+    <dimen name="space_xxs">4dp</dimen>
+    <dimen name="space_xs">8dp</dimen>
+    <dimen name="space_sm">12dp</dimen>
+    <dimen name="space_md">16dp</dimen>
+    <dimen name="space_lg">24dp</dimen>
+    <dimen name="space_xl">32dp</dimen>
+    <dimen name="space_xxl">48dp</dimen>
+
+    <!-- Border radius -->
+    <dimen name="radius_xs">2dp</dimen>
+    <dimen name="radius_sm">6dp</dimen>
+    <dimen name="radius_md">10dp</dimen>
+    <dimen name="radius_lg">12dp</dimen>
+
+    <!-- Component sizes -->
+    <dimen name="topbar_height">64dp</dimen>
+    <dimen name="input_height">44dp</dimen>
+    <dimen name="icon_btn_size">40dp</dimen>
+    <dimen name="conn_dot_size">10dp</dimen>
+    <dimen name="category_border_width">3dp</dimen>
+    <dimen name="ttl_bar_height">2dp</dimen>
+    <dimen name="tab_dot_size">6dp</dimen>
+
+    <!-- Text sizes -->
+    <dimen name="text_caption">11sp</dimen>
+    <dimen name="text_small">13sp</dimen>
+    <dimen name="text_body">14sp</dimen>
+    <dimen name="text_button">16sp</dimen>
+    <dimen name="text_title">20sp</dimen>
+    <dimen name="text_display">24sp</dimen>
+    <dimen name="text_otp_code">28sp</dimen>
+</resources>

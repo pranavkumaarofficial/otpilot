@@ -1,6 +1,7 @@
 package dev.otpilot.worker
 
 import android.content.Context
+import android.util.Log
 import androidx.work.*
 import dev.otpilot.crypto.CryptoUtil
 import java.io.OutputStreamWriter
@@ -23,11 +24,12 @@ class OtpUploadWorker(
 ) : Worker(context, params) {
 
     override fun doWork(): Result {
+        Log.d(TAG, "doWork started")
         val prefs = applicationContext.getSharedPreferences("otpilot", Context.MODE_PRIVATE)
-        val relay = prefs.getString("relay", null) ?: return Result.failure()
-        val familyId = prefs.getString("familyId", null) ?: return Result.failure()
-        val memberToken = prefs.getString("memberToken", null) ?: return Result.failure()
-        val familyKey = prefs.getString("familyKey", null) ?: return Result.failure()
+        val relay = prefs.getString("relay", null) ?: run { Log.e(TAG, "No relay"); return Result.failure() }
+        val familyId = prefs.getString("familyId", null) ?: run { Log.e(TAG, "No familyId"); return Result.failure() }
+        val memberToken = prefs.getString("memberToken", null) ?: run { Log.e(TAG, "No memberToken"); return Result.failure() }
+        val familyKey = prefs.getString("familyKey", null) ?: run { Log.e(TAG, "No familyKey"); return Result.failure() }
         val memberName = prefs.getString("memberName", "phone") ?: "phone"
 
         val from = inputData.getString("from") ?: return Result.failure()
@@ -35,12 +37,14 @@ class OtpUploadWorker(
         val otp = inputData.getString("otp")
         val app = inputData.getString("app") ?: "unknown"
 
+        Log.d(TAG, "Uploading OTP: from=$from otp=$otp app=$app to $relay")
+
         // Build the plaintext payload
         val payload = """{"from":"${escape(from)}","body":"${escape(body)}","otp":${if (otp != null) "\"$otp\"" else "null"},"app":"$app","memberName":"${escape(memberName)}","timestamp":${System.currentTimeMillis()}}"""
 
         // Encrypt with family key (AES-256-GCM, hardware-accelerated)
         val encrypted = CryptoUtil.encrypt(payload, familyKey)
-            ?: return Result.retry()
+            ?: run { Log.e(TAG, "Encryption failed"); return Result.retry() }
 
         // POST to relay
         return try {
@@ -57,11 +61,13 @@ class OtpUploadWorker(
             OutputStreamWriter(conn.outputStream).use { it.write(jsonBody) }
 
             val code = conn.responseCode
+            Log.d(TAG, "Server response: $code")
             conn.disconnect()
 
-            if (code in 200..299) Result.success() else Result.retry()
+            if (code in 200..299) Result.success() else { Log.e(TAG, "Upload failed with code $code"); Result.retry() }
         } catch (e: Exception) {
-            Result.retry() // WorkManager will retry with exponential backoff
+            Log.e(TAG, "Upload exception: ${e.message}")
+            Result.retry()
         }
     }
 
@@ -69,10 +75,7 @@ class OtpUploadWorker(
         s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n")
 
     companion object {
-        /**
-         * Enqueue a one-shot OTP upload. Called from the BroadcastReceiver.
-         * Constraints: requires network. Expedited for urgency.
-         */
+        private const val TAG = "OtpUploadWorker"
         fun enqueue(context: Context, from: String, body: String, otp: String?, app: String) {
             val data = Data.Builder()
                 .putString("from", from)

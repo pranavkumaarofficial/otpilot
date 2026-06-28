@@ -1,58 +1,80 @@
-# otpilot
+<p align="center">
+  <h1 align="center">otpilot</h1>
+  <p align="center">
+    Share OTPs across family phones in real time. Self-hosted. End-to-end encrypted. The server can't read anything.
+  </p>
+</p>
 
-Self-hosted OTP sharing for families. End-to-end encrypted. Runs on any local network or Tailscale.
+<p align="center">
+  <a href="#getting-started">Getting started</a> &middot;
+  <a href="#how-it-works">How it works</a> &middot;
+  <a href="#security">Security</a> &middot;
+  <a href="#api">API</a>
+</p>
 
-Mom ordered something on Amazon. She's stuck in a meeting at work. The delivery guy shows up at your door and needs the OTP that went to her phone. She can't pick up.
+<p align="center">
+  <img alt="License" src="https://img.shields.io/github/license/pranavkumaarofficial/otpilot">
+  <img alt="Node.js" src="https://img.shields.io/badge/node-%3E%3D18-brightgreen">
+  <img alt="Docker" src="https://img.shields.io/badge/docker-ready-blue">
+  <img alt="Android" src="https://img.shields.io/badge/android-app-3DDC84?logo=android&logoColor=white">
+  <img alt="Dependencies" src="https://img.shields.io/badge/dependencies-1-orange">
+  <img alt="Encryption" src="https://img.shields.io/badge/encryption-AES--256--GCM-blueviolet">
+</p>
 
-This happens every day in Indian households. The existing SMS forwarding apps are closed-source, route your messages through someone else's cloud, and can read everything. otpilot runs on your own network and the server literally cannot read your OTPs because it never has the encryption key.
+---
 
-The whole thing is about 1000 lines of code with a single npm dependency (`ws`).
+## The problem
+
+Mom ordered something on Amazon. She's in a meeting at work. The delivery guy is at your door asking for the OTP that went to her phone. She can't pick up.
+
+This happens every day in Indian households. The existing SMS forwarding apps are closed-source, route messages through someone else's cloud, and can read everything in plaintext.
+
+otpilot runs on your own network. The relay server never has the encryption key, so it literally cannot read your OTPs. One npm dependency. About 300 lines of server code.
 
 ## How it works
 
 ```
-Phone A (sender)  ---[encrypted OTP]--->  otpilot relay  ---[encrypted OTP]--->  Phone B (receiver)
-Phone B (sender)  ---[encrypted OTP]--->  (your Pi/NAS)  ---[encrypted OTP]--->  Phone A (receiver)
+Phone A (sender)  ---[encrypted OTP]--->  otpilot relay  ---[encrypted OTP]--->  Phone B (viewer)
+Phone B (sender)  ---[encrypted OTP]--->  (your Pi/NAS)  ---[encrypted OTP]--->  Phone A (viewer)
                                           can't decrypt
 ```
 
-Each family member's phone does two things:
-1. Sends OTP messages from that phone to the relay, encrypted with the family key
-2. Receives OTP messages from all other family members, decrypted in the browser
+Every family member's phone does two things:
+1. **Sends** - intercepts OTP SMS on that phone, encrypts with the family key, uploads to the relay
+2. **Receives** - gets encrypted OTPs from other family members via WebSocket, decrypts locally
 
-The relay server just passes encrypted blobs around. It never has the family key and cannot read any OTP.
+The relay just passes ciphertext around. It never has the key.
 
-## What you get
+## Features
 
-- AES-256-GCM end-to-end encryption. The server only sees ciphertext.
-- Runs on a Raspberry Pi, laptop, NAS, or Docker container. Your OTPs stay on your network.
-- QR code onboarding. Create a family, scan a QR to join. No accounts, no passwords, no cloud signup.
-- Tabbed dashboard showing OTPs from every family member, filtered by person.
-- OTPs auto-expire after 5 minutes (configurable to 1, 3, 5, or 10 min). Nothing is written to disk.
-- Color-coded OTP cards by category: delivery (Amazon, Flipkart), food (Swiggy, Zomato), transport (Uber, Ola), banking (HDFC, ICICI).
-- Admin panel for the family creator: stats, member list, remove devices, regenerate invite codes.
-- Settings panel: OTP expiry, SMS filter keywords, blocked senders, browser notifications, sound alerts.
-- Works over Tailscale, local WiFi, or any network where devices can reach each other.
-- PWA that you can add to your home screen. Offline support for cached pages.
-- One npm dependency. The server uses `ws` for WebSocket support. That's it.
+- **End-to-end encrypted** - AES-256-GCM. The server only sees ciphertext. Key is generated in the browser and shared via QR code.
+- **Self-hosted** - runs on a Raspberry Pi, NAS, old laptop, or Docker container. OTPs never leave your network.
+- **Native Android app** - no Termux needed. Installs as a regular APK, reads SMS via notification listener, works on Samsung.
+- **Real-time dashboard** - OTPs appear within a second. Tabbed by family member. Color-coded by category (delivery, food, transport, banking).
+- **QR code onboarding** - create a family, scan to join. No accounts, no passwords.
+- **Auto-expiry** - OTPs disappear after 5 minutes (configurable: 1, 3, 5, or 10 min). Nothing touches disk.
+- **Smart filtering** - only forwards SMS containing OTP-related keywords. Personal messages stay on the phone.
+- **Works over Tailscale** - or local WiFi, or any network where devices can reach each other.
+- **PWA** - add to home screen, works offline.
+- **Admin panel** - stats, member list, remove devices, regenerate invite codes.
+- **One dependency** - the server uses `ws` for WebSocket. That's the entire dependency tree.
 
 ## Tech stack
 
 | Component | Technology | Details |
 |-----------|-----------|---------|
-| Relay server | Node.js, `ws` | ~280 lines, HTTP + WebSocket server, cannot decrypt OTPs |
-| Web app | Vanilla JavaScript (PWA) | No framework. Uses Web Crypto API for AES-256-GCM, IndexedDB for local state, Service Worker for offline |
-| SMS sender | Node.js on Termux | Polls `termux-sms-list`, encrypts with Node.js `crypto`, forwards over WebSocket |
-| Android app | Kotlin | BroadcastReceiver for SMS, WorkManager for background sending, AES-256-GCM |
-| Transport | WebSocket | Bidirectional, real-time. Works over Tailscale, WiFi, or LAN |
-| Encryption | AES-256-GCM | 256-bit key generated in the browser, shared via QR code, never sent to the server |
-| UI | Inter font, vanilla CSS | Design system loosely based on Airtable's visual language |
+| Relay server | Node.js, `ws` | ~300 lines. HTTP + WebSocket. Cannot decrypt OTPs. |
+| Web app | Vanilla JS (PWA) | No framework. Web Crypto API, IndexedDB, Service Worker. |
+| Android app | Kotlin | NotificationListener + WorkManager + WebSocket dashboard. Samsung-compatible. |
+| Termux sender | Node.js | Alternative sender for phones where the APK isn't installed. |
+| Encryption | AES-256-GCM | 256-bit key generated client-side, shared via QR, never sent to server. |
+| Transport | WebSocket | Bidirectional, real-time. Tailscale / WiFi / LAN. |
 
 ## Getting started
 
 ### 1. Start the relay
 
-Run the relay on any machine that stays on. A Pi, a NAS, an old laptop, whatever.
+Run on any machine that stays on. A Pi, a NAS, an old laptop, whatever.
 
 ```bash
 git clone https://github.com/pranavkumaarofficial/otpilot.git
@@ -67,25 +89,31 @@ Or with Docker:
 docker compose up -d
 ```
 
-The server starts on port 7890 and prints your LAN IP.
+The server starts on port `7890` and prints your LAN IP.
 
 ### 2. Create a family
 
-Open `http://<your-lan-ip>:7890` in a browser. Enter a family name and your name. You get a QR code with the invite payload (relay address, family ID, join token, encryption key).
+Open `http://<your-lan-ip>:7890` in a browser. Enter a family name and your name. You get a QR code containing the relay address, family ID, join token, and encryption key.
 
-### 3. Add members
+### 3. Add family members
 
-Each family member opens the same URL on their phone, taps "Join family", and scans the QR code. Takes about 30 seconds per person. No manual configuration.
+Each person opens the same URL on their phone, taps "Join family", and scans the QR. About 30 seconds per person.
 
 ### 4. Set up SMS forwarding
 
-On each phone that should forward OTPs, install Termux and Termux:API from F-Droid:
+**Android app (recommended)**
+
+Install the otpilot APK. Open it, scan the QR code, grant notification access. Done. The app reads incoming SMS via Android's notification listener, encrypts them, and forwards to the relay in the background. Works on Samsung phones that block direct SMS broadcast access.
+
+**Termux (alternative)**
+
+If you prefer a terminal:
 
 ```bash
 pkg install termux-api nodejs
 ```
 
-Then copy the sender command from the app (Settings > Sender setup) and run it in Termux. It polls for new SMS, filters by keywords (otp, code, pin, verification, etc.), encrypts matching messages, and sends them to the relay.
+Copy the sender command from the web app (Settings > Sender setup) and run it in Termux.
 
 ### 5. Done
 
@@ -93,42 +121,42 @@ OTPs show up on every family member's screen within a second. Tap a card to copy
 
 ## Security
 
-| What | How |
-|------|-----|
-| Encryption | AES-256-GCM. Every OTP is encrypted in the browser before it leaves the device. The server only sees ciphertext. |
-| Key management | The family key is generated in the browser and shared via QR code. The server never has it. |
-| Network | OTPs travel over your local network or Tailscale mesh. They don't touch the public internet. |
-| Device pairing | Joining a family requires physically scanning a QR code. No passwords to guess. |
-| Expiry | OTPs are deleted from memory after the configured TTL (default 5 minutes). |
-| Filtering | Only SMS containing OTP-related keywords are forwarded. Personal messages stay on the phone. |
-| Storage | Everything is in memory. Nothing is written to disk. Server restart clears all data. |
+| Layer | Implementation |
+|-------|---------------|
+| Encryption | AES-256-GCM. OTPs are encrypted on the device before leaving. Server sees only ciphertext. |
+| Key management | Family key generated in the browser, shared via QR code. Server never has it. |
+| Network | Traffic stays on your local network or Tailscale mesh. Nothing hits the public internet. |
+| Device pairing | Requires physically scanning a QR code. No passwords to guess or phish. |
+| Expiry | OTPs deleted from memory after TTL (default 5 min). |
+| Filtering | Only SMS with OTP-related keywords are forwarded. Personal messages stay on the phone. |
+| Storage | Everything in memory. Nothing on disk. Server restart clears all data. |
 
 ## Configuration
 
 ### OTP expiry
 
-The admin can change OTP expiry from the Settings panel: 1 min, 3 min, 5 min, or 10 min. This syncs to all family members over WebSocket.
+The admin can set OTP expiry from Settings: 1 min, 3 min, 5 min, or 10 min. Syncs to all members over WebSocket.
 
 ### SMS filter keywords
 
-Each device configures its own filter keywords in Settings > Filter rules. Defaults:
+Each device configures its own keywords in Settings > Filter rules. Defaults:
 
 ```
 otp, code, pin, verification, verify, delivery, parcel, order
 ```
 
-Only SMS messages containing these keywords get forwarded. Everything else stays on the phone.
+Only SMS containing these keywords get forwarded.
 
 ### Blocked senders
 
-You can block specific sender IDs (like `AD-SPAM` or `DM-PROMO`) so their messages are never forwarded.
+Block specific sender IDs (`AD-SPAM`, `DM-PROMO`, etc.) so their messages are never forwarded.
 
 ### Environment variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `PORT` | `7890` | Server port |
-| `RELAY_HOST` | auto-detected LAN IP | Override the IP used in QR codes |
+| `RELAY_HOST` | auto-detected LAN IP | Override the relay IP in QR codes |
 
 ## Project structure
 
@@ -170,29 +198,47 @@ otpilot/
 - [x] Admin panel with stats and member management
 - [x] Settings panel (expiry, filters, notifications)
 - [x] Color-coded OTP cards by category
-- [x] Name changes that sync across devices
 - [x] Tailscale IP detection
-- [ ] Native Android app (replace Termux with a proper APK)
+- [x] Native Android app (replaces Termux)
 - [ ] Cloud relay mode with E2E encryption (Railway/Fly.io)
-- [ ] iOS sender workaround (Shortcuts or similar)
+- [ ] iOS sender (Shortcuts or similar)
 - [ ] Telegram/Discord notification channels
 - [ ] PIN or biometric lock on the PWA
 - [ ] Sender-ID prefix filtering (VK-SBI, AD-AMAZON, etc.)
 - [ ] Multi-family support per device
 
+## FAQ
+
+**Why not just use Google Messages web?**
+Google Messages web requires your phone to be on and connected. If your phone dies or loses signal, everyone loses access. It also only lets one person view one phone. otpilot lets the whole family see OTPs from every phone simultaneously.
+
+**Does the server store my OTPs?**
+No. OTPs live in memory and auto-delete after the TTL expires. Nothing is written to disk. Restart the server and everything is gone.
+
+**Can the server admin read my OTPs?**
+No. The encryption key is generated in your browser and shared via QR code. The server never receives it. Even if someone dumps the server's memory, they get ciphertext.
+
+**Does it work on Samsung?**
+Yes. Samsung blocks the standard SMS broadcast for non-default messaging apps, so the Android app uses a NotificationListener instead. It reads the SMS content from the notification posted by Google Messages or Samsung Messages.
+
+**What about iOS?**
+iOS doesn't allow third-party apps to read SMS. There's no workaround yet. PRs welcome if you find one.
+
+**Is this safe to use for bank OTPs?**
+The encryption is the same standard (AES-256-GCM) used by Signal, WhatsApp, and most banking apps. OTPs auto-expire and never touch disk. That said, you're trusting everyone in your family group with access to your OTPs, so only add people you trust.
+
 ## Contributing
 
 The codebase is small on purpose. PRs welcome, especially:
 
-- Android app to replace the Termux workaround with a proper background SMS listener
 - iOS sender using any workaround for SMS access
 - OTP detection for non-English SMS
 - Filter rule UI improvements
 
 ## License
 
-MIT
+[MIT](LICENSE)
 
 ---
 
-Built because my mom was stuck in a meeting and I couldn't collect her Amazon package.
+Built because my mom was stuck in a meeting and I couldn't get her Amazon package delivered.

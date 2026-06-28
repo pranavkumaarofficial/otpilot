@@ -1,0 +1,384 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/canvas">
+
+    <!-- Top bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/topbar_height"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="@dimen/space_md"
+        android:background="@color/canvas">
+
+        <ImageButton
+            android:id="@+id/backBtn"
+            android:layout_width="@dimen/icon_btn_size"
+            android:layout_height="@dimen/icon_btn_size"
+            android:src="@drawable/ic_back"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Back"
+            android:scaleType="center" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/settings"
+            android:textSize="@dimen/text_title"
+            android:textColor="@color/ink"
+            android:layout_marginStart="@dimen/space_sm" />
+    </LinearLayout>
+
+    <!-- Hairline -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/hairline" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/space_md">
+
+            <!-- Profile section -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/profile"
+                android:textSize="@dimen/text_caption"
+                android:textColor="@color/muted"
+                android:fontFamily="sans-serif-medium"
+                android:textAllCaps="true"
+                android:letterSpacing="0.05"
+                android:layout_marginBottom="@dimen/space_xs" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="@dimen/space_md"
+                android:layout_marginBottom="@dimen/space_lg">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/your_name"
+                    android:textSize="@dimen/text_body"
+                    android:textColor="@color/body"
+                    android:fontFamily="sans-serif-medium"
+                    android:layout_marginBottom="@dimen/space_xs" />
+
+                <EditText
+                    android:id="@+id/nameInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/input_height"
+                    android:background="@drawable/bg_input_selector"
+                    android:paddingHorizontal="@dimen/space_md"
+                    android:textSize="@dimen/text_body"
+                    android:textColor="@color/ink"
+                    android:inputType="textPersonName"
+                    android:maxLines="1"
+                    android:importantForAutofill="no"
+                    android:layout_marginBottom="@dimen/space_sm" />
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/saveNameBtn"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_btn_primary"
+                    android:text="@string/save"
+                    android:textColor="@color/on_primary"
+                    android:textSize="@dimen/text_body"
+                    android:fontFamily="sans-serif-medium"
+                    android:textAllCaps="false"
+                    android:paddingVertical="@dimen/space_xs"
+                    android:paddingHorizontal="@dimen/space_md"
+                    android:minHeight="0dp"
+                    android:minWidth="0dp" />
+            </LinearLayout>
+
+            <!-- OTP Expiry section -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/otp_expiry"
+                android:textSize="@dimen/text_caption"
+                android:textColor="@color/muted"
+                android:fontFamily="sans-serif-medium"
+                android:textAllCaps="true"
+                android:letterSpacing="0.05"
+                android:layout_marginBottom="@dimen/space_xs" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="@dimen/space_md"
+                android:layout_marginBottom="@dimen/space_lg">
+
+                <LinearLayout
+                    android:id="@+id/ttlOptions"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/ttl1min"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/expiry_1min"
+                        android:textSize="@dimen/text_body"
+                        android:textColor="@color/body"
+                        android:fontFamily="sans-serif-medium"
+                        android:gravity="center"
+                        android:background="@drawable/bg_radio_option"
+                        android:paddingVertical="@dimen/space_xs"
+                        android:paddingHorizontal="@dimen/space_sm"
+                        android:layout_marginEnd="@dimen/space_xs" />
+
+                    <TextView
+                        android:id="@+id/ttl3min"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/expiry_3min"
+                        android:textSize="@dimen/text_body"
+                        android:textColor="@color/body"
+                        android:fontFamily="sans-serif-medium"
+                        android:gravity="center"
+                        android:background="@drawable/bg_radio_option"
+                        android:paddingVertical="@dimen/space_xs"
+                        android:paddingHorizontal="@dimen/space_sm"
+                        android:layout_marginEnd="@dimen/space_xs" />
+
+                    <TextView
+                        android:id="@+id/ttl5min"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/expiry_5min"
+                        android:textSize="@dimen/text_body"
+                        android:textColor="@color/body"
+                        android:fontFamily="sans-serif-medium"
+                        android:gravity="center"
+                        android:background="@drawable/bg_radio_option"
+                        android:paddingVertical="@dimen/space_xs"
+                        android:paddingHorizontal="@dimen/space_sm"
+                        android:layout_marginEnd="@dimen/space_xs" />
+
+                    <TextView
+                        android:id="@+id/ttl10min"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/expiry_10min"
+                        android:textSize="@dimen/text_body"
+                        android:textColor="@color/body"
+                        android:fontFamily="sans-serif-medium"
+                        android:gravity="center"
+                        android:background="@drawable/bg_radio_option"
+                        android:paddingVertical="@dimen/space_xs"
+                        android:paddingHorizontal="@dimen/space_sm" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/ttlAdminHint"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/admin_only"
+                    android:textSize="@dimen/text_small"
+                    android:textColor="@color/border_strong"
+                    android:layout_marginTop="@dimen/space_xs"
+                    android:visibility="gone" />
+            </LinearLayout>
+
+            <!-- Filter rules section -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/filter_rules"
+                android:textSize="@dimen/text_caption"
+                android:textColor="@color/muted"
+                android:fontFamily="sans-serif-medium"
+                android:textAllCaps="true"
+                android:letterSpacing="0.05"
+                android:layout_marginBottom="@dimen/space_xs" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="@dimen/space_md"
+                android:layout_marginBottom="@dimen/space_lg">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/filter_desc"
+                    android:textSize="@dimen/text_small"
+                    android:textColor="@color/muted"
+                    android:layout_marginBottom="@dimen/space_sm" />
+
+                <EditText
+                    android:id="@+id/filterInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="100dp"
+                    android:background="@drawable/bg_input_selector"
+                    android:padding="@dimen/space_md"
+                    android:textSize="@dimen/text_body"
+                    android:textColor="@color/ink"
+                    android:inputType="textMultiLine"
+                    android:gravity="top"
+                    android:importantForAutofill="no"
+                    android:layout_marginBottom="@dimen/space_sm" />
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/saveFiltersBtn"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_btn_primary"
+                    android:text="@string/save"
+                    android:textColor="@color/on_primary"
+                    android:textSize="@dimen/text_body"
+                    android:fontFamily="sans-serif-medium"
+                    android:textAllCaps="false"
+                    android:paddingVertical="@dimen/space_xs"
+                    android:paddingHorizontal="@dimen/space_md"
+                    android:minHeight="0dp"
+                    android:minWidth="0dp" />
+            </LinearLayout>
+
+            <!-- Notifications section -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/notifications_label"
+                android:textSize="@dimen/text_caption"
+                android:textColor="@color/muted"
+                android:fontFamily="sans-serif-medium"
+                android:textAllCaps="true"
+                android:letterSpacing="0.05"
+                android:layout_marginBottom="@dimen/space_xs" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/bg_card"
+                android:padding="@dimen/space_md"
+                android:layout_marginBottom="@dimen/space_lg">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:layout_marginEnd="@dimen/space_md">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/notifications_label"
+                        android:textSize="@dimen/text_body"
+                        android:textColor="@color/body"
+                        android:fontFamily="sans-serif-medium" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/notif_desc"
+                        android:textSize="@dimen/text_small"
+                        android:textColor="@color/muted"
+                        android:layout_marginTop="@dimen/space_xxs" />
+                </LinearLayout>
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/notifToggle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <!-- Sender status section -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/sender_status"
+                android:textSize="@dimen/text_caption"
+                android:textColor="@color/muted"
+                android:fontFamily="sans-serif-medium"
+                android:textAllCaps="true"
+                android:letterSpacing="0.05"
+                android:layout_marginBottom="@dimen/space_xs" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="@dimen/space_md"
+                android:layout_marginBottom="@dimen/space_lg">
+
+                <TextView
+                    android:id="@+id/senderStatusText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/sender_active"
+                    android:textSize="@dimen/text_body"
+                    android:textColor="@color/success" />
+            </LinearLayout>
+
+            <!-- Members section -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/members_label"
+                android:textSize="@dimen/text_caption"
+                android:textColor="@color/muted"
+                android:fontFamily="sans-serif-medium"
+                android:textAllCaps="true"
+                android:letterSpacing="0.05"
+                android:layout_marginBottom="@dimen/space_xs" />
+
+            <LinearLayout
+                android:id="@+id/membersContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="@dimen/space_md"
+                android:layout_marginBottom="@dimen/space_lg" />
+
+            <!-- Leave family -->
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/leaveBtn"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_btn_danger"
+                android:text="@string/leave_family"
+                android:textColor="@color/coral"
+                android:textSize="@dimen/text_button"
+                android:fontFamily="sans-serif-medium"
+                android:textAllCaps="false"
+                android:paddingVertical="@dimen/space_md"
+                android:paddingHorizontal="@dimen/space_lg"
+                android:layout_marginBottom="@dimen/space_xxl" />
+
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Background circle area is 72dp centered in 108dp -->
+    <!-- Simple "O" letter for otpilot -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,34 C43.5,34 35,42.5 35,53 C35,63.5 43.5,72 54,72 C64.5,72 73,63.5 73,53 C73,42.5 64.5,34 54,34z M54,41 C60.6,41 66,46.4 66,53 C66,59.6 60.6,65 54,65 C47.4,65 42,59.6 42,53 C42,46.4 47.4,41 54,41z" />
+</vector>

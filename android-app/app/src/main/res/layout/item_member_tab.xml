@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/tabRoot"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:background="@drawable/bg_tab_inactive"
+    android:paddingHorizontal="@dimen/space_sm"
+    android:paddingVertical="@dimen/space_xs"
+    android:layout_marginEnd="@dimen/space_xs"
+    android:clickable="true"
+    android:focusable="true">
+
+    <!-- Online dot -->
+    <View
+        android:id="@+id/onlineDot"
+        android:layout_width="@dimen/tab_dot_size"
+        android:layout_height="@dimen/tab_dot_size"
+        android:background="@drawable/dot_disconnected"
+        android:layout_marginEnd="@dimen/space_xxs"
+        android:visibility="gone" />
+
+    <!-- Name -->
+    <TextView
+        android:id="@+id/tabName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="@dimen/text_body"
+        android:textColor="@color/muted"
+        android:fontFamily="sans-serif-medium" />
+
+    <!-- Count badge -->
+    <TextView
+        android:id="@+id/countBadge"
+        android:layout_width="wrap_content"
+        android:layout_height="18dp"
+        android:gravity="center"
+        android:minWidth="18dp"
+        android:background="@drawable/bg_count_badge"
+        android:textSize="@dimen/text_caption"
+        android:textColor="@color/on_primary"
+        android:fontFamily="sans-serif-medium"
+        android:paddingHorizontal="5dp"
+        android:layout_marginStart="@dimen/space_xxs"
+        android:visibility="gone" />
+</LinearLayout>

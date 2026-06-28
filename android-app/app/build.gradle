@@ -9,17 +9,21 @@ android {
 
     defaultConfig {
         applicationId "dev.otpilot"
-        minSdk 24          // Android 7.0+ (covers 95%+ of devices)
+        minSdk 24
         targetSdk 34
         versionCode 1
-        versionName "0.2.0"
+        versionName "1.0.0"
     }
 
     buildTypes {
         release {
             minifyEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
+    }
+
+    buildFeatures {
+        viewBinding true
     }
 
     compileOptions {
@@ -32,18 +36,26 @@ android {
 }
 
 dependencies {
-    // WorkManager — handles network-resilient OTP uploads
+    implementation 'androidx.core:core-ktx:1.12.0'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.11.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'androidx.recyclerview:recyclerview:1.3.2'
+
+    // WorkManager for network-resilient OTP uploads
     implementation 'androidx.work:work-runtime-ktx:2.9.0'
 
-    // CameraX — for QR code scanning during onboarding
+    // CameraX for QR code scanning
     implementation 'androidx.camera:camera-camera2:1.3.1'
     implementation 'androidx.camera:camera-lifecycle:1.3.1'
     implementation 'androidx.camera:camera-view:1.3.1'
 
-    // ML Kit barcode scanning — reads QR codes
+    // ML Kit barcode scanning
     implementation 'com.google.mlkit:barcode-scanning:17.2.0'
 
-    // AppCompat + Material (minimal UI for setup screen)
-    implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'com.google.android.material:material:1.11.0'
+    // LocalBroadcastManager for service-to-activity communication
+    implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.1.0'
+
+    // OkHttp for WebSocket client
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
 }
