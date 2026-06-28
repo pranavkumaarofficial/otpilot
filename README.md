@@ -25,9 +25,9 @@
 
 ## The problem
 
-Mom ordered something on Amazon. She's in a meeting at work. The delivery guy is at your door asking for the OTP that went to her phone. She can't pick up.
+My mom ordered something on Amazon. She's in a meeting at work. The delivery guy is at your door asking for the OTP that went to her phone. She can't pick up.
 
-This happens every day in Indian households. The existing SMS forwarding apps are closed-source, route messages through someone else's cloud, and can read everything in plaintext.
+This happens every day in households. The existing SMS forwarding apps are closed-source, route messages through someone else's cloud, and can read everything in plaintext.
 
 otpilot runs on your own network. The relay server never has the encryption key, so it literally cannot read your OTPs. One npm dependency. About 300 lines of server code.
 
