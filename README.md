@@ -29,7 +29,7 @@ My mom ordered something on Amazon. She's in a meeting at work. The delivery guy
 
 This happens every day in households. The existing SMS forwarding apps are closed-source, route messages through someone else's cloud, and can read everything in plaintext.
 
-otpilot runs on your own network. The relay server never has the encryption key, so it literally cannot read your OTPs. One npm dependency. About 300 lines of server code.
+otpilot runs on your own network. The relay server never has the encryption key, so it literally cannot read your OTPs. One npm dependency. About 300 lines of server code. Works across locations with Tailscale -- the server auto-detects mesh IPs, so a family split between home and office connects without port forwarding or DNS.
 
 ## How it works
 
@@ -68,7 +68,7 @@ https://github.com/user-attachments/assets/81aa0527-9762-4021-b037-4b8d84910158
 - **QR code onboarding** - create a family, scan to join. No accounts, no passwords.
 - **Auto-expiry** - OTPs disappear after 5 minutes (configurable: 1, 3, 5, or 10 min). Nothing touches disk.
 - **Smart filtering** - only forwards SMS containing OTP-related keywords. Personal messages stay on the phone.
-- **Works over Tailscale** - or local WiFi, or any network where devices can reach each other.
+- **Tailscale-native** - auto-detects Tailscale IPs and bakes them into QR codes. Family members on different WiFi networks (home, office, travel) connect with zero port forwarding or DNS setup.
 - **PWA** - add to home screen, works offline.
 - **Admin panel** - stats, member list, remove devices, regenerate invite codes.
 - **One dependency** - the server uses `ws` for WebSocket. That's the entire dependency tree.
