@@ -6,7 +6,9 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
+import android.view.View
 import android.widget.EditText
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -16,7 +18,6 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
@@ -32,8 +33,13 @@ import java.util.concurrent.Executors
 
 class OnboardingActivity : AppCompatActivity() {
 
+    companion object {
+        private const val TAG = "OnboardingActivity"
+    }
+
     private lateinit var binding: ActivityOnboardingBinding
     private var scannerActive = false
+    private var cameraProvider: ProcessCameraProvider? = null
 
     private val permissions: Array<String>
         get() {
@@ -51,9 +57,12 @@ class OnboardingActivity : AppCompatActivity() {
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { results ->
-        if (results.values.all { it }) {
+        val cameraGranted = results[Manifest.permission.CAMERA] == true
+        if (cameraGranted) {
             enableButtons()
         } else {
+            // Camera denied, disable scan but keep paste
+            binding.pasteBtn.isEnabled = true
             Toast.makeText(this, R.string.permissions_needed, Toast.LENGTH_LONG).show()
         }
     }
@@ -74,6 +83,7 @@ class OnboardingActivity : AppCompatActivity() {
 
         binding.scanBtn.setOnClickListener { startQRScanner() }
         binding.pasteBtn.setOnClickListener { showPasteDialog() }
+        binding.closeScannerBtn.setOnClickListener { stopScanner() }
 
         // Request permissions
         val missing = permissions.filter {
@@ -107,75 +117,67 @@ class OnboardingActivity : AppCompatActivity() {
         if (scannerActive) return
         scannerActive = true
 
-        // Add camera preview to layout
-        val previewView = PreviewView(this).apply {
-            layoutParams = android.widget.FrameLayout.LayoutParams(
-                android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
-                android.widget.FrameLayout.LayoutParams.MATCH_PARENT
-            )
-        }
-
-        val overlay = android.widget.FrameLayout(this).apply {
-            layoutParams = android.widget.FrameLayout.LayoutParams(
-                android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
-                android.widget.FrameLayout.LayoutParams.MATCH_PARENT
-            )
-            addView(previewView)
-            setOnClickListener {
-                // Tap to close scanner
-                (parent as? android.view.ViewGroup)?.removeView(this)
-                scannerActive = false
-            }
-        }
-
-        (binding.root as android.view.ViewGroup).addView(overlay)
+        // Show camera overlay
+        binding.cameraOverlay.visibility = View.VISIBLE
 
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
         cameraProviderFuture.addListener({
-            val cameraProvider = cameraProviderFuture.get()
-            val preview = Preview.Builder().build().apply {
-                setSurfaceProvider(previewView.surfaceProvider)
-            }
+            try {
+                val provider = cameraProviderFuture.get()
+                cameraProvider = provider
 
-            val analyzer = ImageAnalysis.Builder()
-                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                .build()
+                val preview = Preview.Builder().build().apply {
+                    setSurfaceProvider(binding.cameraPreview.surfaceProvider)
+                }
 
-            val scanner = BarcodeScanning.getClient()
-            val executor = Executors.newSingleThreadExecutor()
+                val analyzer = ImageAnalysis.Builder()
+                    .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                    .build()
 
-            analyzer.setAnalyzer(executor) { imageProxy ->
-                val mediaImage = imageProxy.image
-                if (mediaImage != null) {
-                    val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
-                    scanner.process(image)
-                        .addOnSuccessListener { barcodes ->
-                            for (barcode in barcodes) {
-                                if (barcode.valueType == Barcode.TYPE_TEXT) {
-                                    val raw = barcode.rawValue ?: continue
-                                    runOnUiThread {
-                                        cameraProvider.unbindAll()
-                                        (overlay.parent as? android.view.ViewGroup)?.removeView(overlay)
-                                        scannerActive = false
-                                        handleInvitePayload(raw, name)
+                val scanner = BarcodeScanning.getClient()
+                val executor = Executors.newSingleThreadExecutor()
+
+                analyzer.setAnalyzer(executor) { imageProxy ->
+                    val mediaImage = imageProxy.image
+                    if (mediaImage != null && scannerActive) {
+                        val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
+                        scanner.process(image)
+                            .addOnSuccessListener { barcodes ->
+                                for (barcode in barcodes) {
+                                    if (barcode.valueType == Barcode.TYPE_TEXT) {
+                                        val raw = barcode.rawValue ?: continue
+                                        runOnUiThread {
+                                            stopScanner()
+                                            handleInvitePayload(raw, name)
+                                        }
+                                        return@addOnSuccessListener
                                     }
-                                    return@addOnSuccessListener
                                 }
                             }
-                        }
-                        .addOnCompleteListener { imageProxy.close() }
-                } else {
-                    imageProxy.close()
+                            .addOnCompleteListener { imageProxy.close() }
+                    } else {
+                        imageProxy.close()
+                    }
+                }
+
+                provider.unbindAll()
+                provider.bindToLifecycle(
+                    this, CameraSelector.DEFAULT_BACK_CAMERA, preview, analyzer
+                )
+            } catch (e: Exception) {
+                Log.e(TAG, "Camera setup failed", e)
+                runOnUiThread {
+                    stopScanner()
+                    Toast.makeText(this, "Camera error: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
             }
-
-            cameraProvider.unbindAll()
-            cameraProvider.bindToLifecycle(
-                this, CameraSelector.DEFAULT_BACK_CAMERA, preview, analyzer
-            )
         }, ContextCompat.getMainExecutor(this))
+    }
 
-        Toast.makeText(this, R.string.point_at_qr, Toast.LENGTH_SHORT).show()
+    private fun stopScanner() {
+        scannerActive = false
+        cameraProvider?.unbindAll()
+        binding.cameraOverlay.visibility = View.GONE
     }
 
     private fun showPasteDialog() {
@@ -220,7 +222,7 @@ class OnboardingActivity : AppCompatActivity() {
             return
         }
 
-        binding.statusText.visibility = android.view.View.VISIBLE
+        binding.statusText.visibility = View.VISIBLE
         binding.statusText.text = getString(R.string.joining)
         binding.scanBtn.isEnabled = false
         binding.pasteBtn.isEnabled = false
@@ -275,7 +277,7 @@ class OnboardingActivity : AppCompatActivity() {
                         Toast.makeText(this, R.string.join_failed, Toast.LENGTH_SHORT).show()
                         binding.scanBtn.isEnabled = true
                         binding.pasteBtn.isEnabled = true
-                        binding.statusText.visibility = android.view.View.GONE
+                        binding.statusText.visibility = View.GONE
                     }
                 }
             } catch (e: Exception) {
@@ -283,9 +285,14 @@ class OnboardingActivity : AppCompatActivity() {
                     Toast.makeText(this, "${getString(R.string.network_error)}: ${e.message}", Toast.LENGTH_SHORT).show()
                     binding.scanBtn.isEnabled = true
                     binding.pasteBtn.isEnabled = true
-                    binding.statusText.visibility = android.view.View.GONE
+                    binding.statusText.visibility = View.GONE
                 }
             }
         }.start()
+    }
+
+    override fun onDestroy() {
+        cameraProvider?.unbindAll()
+        super.onDestroy()
     }
 }

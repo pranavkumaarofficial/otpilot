@@ -50,9 +50,14 @@ class OtpReceiver : BroadcastReceiver() {
         )
 
         private val OTP_REGEX = listOf(
+            // Numeric code near OTP keywords
             Regex("\\b(\\d{4,8})\\b.*(?:otp|code|pin|verification|verify)", RegexOption.IGNORE_CASE),
             Regex("(?:otp|code|pin|verification|verify).*\\b(\\d{4,8})\\b", RegexOption.IGNORE_CASE),
-            Regex("\\b(\\d{6})\\b"),
+            // Alphanumeric code near OTP keywords (e.g. E9394, AB1234, 2F8G)
+            Regex("\\b([A-Z0-9]{4,8})\\b.*(?:otp|code|pin|verification|verify)", RegexOption.IGNORE_CASE),
+            Regex("(?:otp|code|pin|verification|verify).*\\b([A-Z0-9]{4,8})\\b", RegexOption.IGNORE_CASE),
+            // Standalone 6-digit fallback
+            Regex("\\b(\\d{6})\\b", RegexOption.IGNORE_CASE),
         )
     }
 

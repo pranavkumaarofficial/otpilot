@@ -27,7 +27,9 @@ if (!RELAY || !FAMILY || !TOKEN || !KEY_B64) {
 const OTP_RE = [
   /\b(\d{4,8})\b.*(?:otp|code|pin|verification|verify)/i,
   /(?:otp|code|pin|verification|verify).*\b(\d{4,8})\b/i,
-  /\b(\d{6})\b/,
+  /\b([A-Z0-9]{4,8})\b.*(?:otp|code|pin|verification|verify)/i,
+  /(?:otp|code|pin|verification|verify).*\b([A-Z0-9]{4,8})\b/i,
+  /\b(\d{6})\b/i,
 ];
 
 function extractOTP(text) {

@@ -676,7 +676,7 @@ async function createFamily() {
       <p style="font-size:14px;font-weight:500;color:var(--success);margin-bottom:var(--space-xs)">Family created</p>
       <p class="settings-desc">Show this QR to family members:</p>
       <div class="qr-container"><div id="createQrTarget"></div></div>
-      <p class="invite-text" onclick="copyEl(this)">Or copy this code:<br>${invitePayload}</p>
+      <p class="invite-text" data-copy="${esc(invitePayload)}" onclick="copyEl(this)">Tap to copy invite code:<br>${invitePayload}</p>
       <button class="btn btn-primary btn-block" onclick="enterDashboard()">Open dashboard</button>
     `;
     renderQR("createQrTarget", invitePayload);
@@ -1124,7 +1124,7 @@ function timeAgo(ts) {
 
 function esc(s) { return (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/'/g, "&#39;").replace(/"/g, "&quot;"); }
 
-function copyEl(el) { navigator.clipboard.writeText(el.textContent); toast("Copied"); }
+function copyEl(el) { navigator.clipboard.writeText(el.dataset.copy || el.textContent); toast("Copied"); }
 
 function renderQR(targetId, data) {
   const qr = qrcode(0, "M");
