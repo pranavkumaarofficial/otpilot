@@ -45,6 +45,20 @@ Every family member's phone does two things:
 
 The relay just passes ciphertext around. It never has the key.
 
+
+## Demo
+
+
+# Create Family
+https://github.com/user-attachments/assets/19caa042-7e33-4a3b-8492-a706284242df
+# User flow
+https://github.com/user-attachments/assets/0b6eeb13-292d-425b-8132-e30a5580481e
+# Admin Flow
+https://github.com/user-attachments/assets/81aa0527-9762-4021-b037-4b8d84910158
+
+
+
+
 ## Features
 
 - **End-to-end encrypted** - AES-256-GCM. The server only sees ciphertext. Key is generated in the browser and shared via QR code.
